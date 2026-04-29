@@ -9,31 +9,31 @@
         :root { --primary: #667eea; --bg-grad: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
         .theme-min { --primary: #ff4d4f; --bg-grad: linear-gradient(135deg, #fff1f0 0%, #ffccc7 100%); }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; background: var(--bg-grad); min-height: 100vh; padding: 15px; transition: 0.3s; }
-        .container { max-width: 900px; margin: 0 auto; }
-        .header { background: var(--primary); color: white; padding: 20px; border-radius: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
-        .btn-sync { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
+        body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; background: var(--bg-grad); min-height: 100vh; padding: 10px; transition: 0.3s; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .header { background: var(--primary); color: white; padding: 15px; border-radius: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .btn-sync { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; }
         
-        /* 雙圓餅圖佈局 */
-        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-        .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 10px; }
         .chart-box { text-align: center; }
-        .chart-container { position: relative; height: 180px; width: 100%; margin: 10px 0; }
+        .chart-container { position: relative; height: 160px; width: 100%; margin: 5px 0; }
         
-        .form-group { margin-bottom: 10px; }
-        .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 3px; }
-        .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; }
+        .form-group { margin-bottom: 8px; }
+        .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 2px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; background: #fafafa; }
         
-        .btn-main { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; }
-        .btn-cancel { width: 100%; padding: 10px; background: #999; color: white; border: none; border-radius: 8px; margin-top: 5px; cursor: pointer; display: none; }
+        .edit-mode { background: #fffbe6 !important; border: 2px solid #ffe58f !important; }
+        .btn-main { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 17px; font-weight: bold; cursor: pointer; }
+        .btn-cancel { width: 100%; padding: 10px; background: #999; color: white; border: none; border-radius: 8px; margin-top: 8px; cursor: pointer; display: none; }
         
-        .record-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
-        .amt { font-weight: bold; font-size: 16px; }
-        .actions { display: flex; gap: 10px; margin-top: 5px; }
-        .btn-edit { color: #667eea; background: none; border: none; cursor: pointer; font-size: 12px; }
-        .btn-del { color: #ff7875; background: none; border: none; cursor: pointer; font-size: 12px; }
+        .record-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 5px; border-bottom: 1px solid #eee; }
+        .amt { font-weight: bold; font-size: 17px; color: #333; }
+        .actions { display: flex; gap: 15px; margin-top: 8px; }
+        .btn-edit { color: #4466ee; background: #eef2ff; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .btn-del { color: #ff4d4f; background: #fff1f0; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
         
-        @media (max-width: 600px) { .charts-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 500px) { .charts-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body id="bodyTag">
@@ -41,27 +41,27 @@
 <div class="container">
     <div class="header">
         <div>
-            <h1 id="titleTxt">Z&M 記帳本</h1>
-            <div id="status" style="font-size: 11px; margin-top: 4px; opacity: 0.9;">讀取中...</div>
+            <h1 id="titleTxt" style="font-size: 18px;">Z&M 記帳本</h1>
+            <div id="status" style="font-size: 11px; margin-top: 2px; opacity: 0.9;">連線中...</div>
         </div>
         <button class="btn-sync" onclick="app.fetchCloud()">🔄 刷新資料</button>
     </div>
 
     <div class="charts-grid">
         <div class="card chart-box">
-            <h4>🤴 ZIV 支出佔比</h4>
+            <h4 style="font-size:13px;">ZIV 支出</h4>
             <div class="chart-container"><canvas id="chartZiv"></canvas></div>
-            <div id="totalZiv" style="font-weight:bold; color:#667eea;">$0</div>
+            <div id="totalZiv" style="font-weight:bold; color:#667eea; font-size:14px;">$0</div>
         </div>
         <div class="card chart-box">
-            <h4>👸 MIN 支出佔比</h4>
+            <h4 style="font-size:13px;">MIN 支出</h4>
             <div class="chart-container"><canvas id="chartMin"></canvas></div>
-            <div id="totalMin" style="font-weight:bold; color:#ff4d4f;">$0</div>
+            <div id="totalMin" style="font-weight:bold; color:#ff4d4f; font-size:14px;">$0</div>
         </div>
     </div>
 
     <div class="card" id="formCard">
-        <h3 id="formTitle">🧾 新增帳務</h3>
+        <h3 id="formTitle" style="margin-bottom:10px; font-size:16px;">🧾 新增帳務</h3>
         <input type="hidden" id="editId">
         <div class="form-group"><label>日期</label><input type="date" id="date"></div>
         <div class="form-group"><label>記帳人</label>
@@ -71,13 +71,13 @@
         </div>
         <div class="form-group"><label>分類</label><select id="cat"></select></div>
         <div class="form-group"><label>金額</label><input type="number" id="amt" placeholder="0" inputmode="numeric"></div>
-        <div class="form-group"><label>描述</label><input type="text" id="desc" placeholder="備註"></div>
+        <div class="form-group"><label>描述</label><input type="text" id="desc" placeholder="選填備註"></div>
         <button class="btn-main" id="addBtn">儲存記錄</button>
         <button class="btn-cancel" id="cancelBtn" onclick="app.resetForm()">取消修改</button>
     </div>
 
     <div class="card">
-        <h3>📝 最近記錄</h3>
+        <h3 style="margin-bottom:10px; font-size:16px;">📝 最近記錄</h3>
         <div id="list"></div>
     </div>
 </div>
@@ -123,7 +123,7 @@ class App {
 
     async fetchCloud() {
         const status = document.getElementById('status');
-        status.textContent = '☁️ 同步中...';
+        status.textContent = '☁️ 同步雲端中...';
         try {
             const res = await fetch(MASTER_URL);
             const data = await res.json();
@@ -132,12 +132,13 @@ class App {
                 localStorage.setItem('zm_data', JSON.stringify(this.expenses));
                 status.textContent = '最後更新: ' + new Date().toLocaleTimeString();
             }
-        } catch (e) { status.textContent = '❌ 離線模式'; }
+        } catch (e) { status.textContent = '❌ 目前為離線狀態'; }
         this.render();
     }
 
-    save() {
-        const amtValue = document.getElementById('amt').value;
+    async save() {
+        const amtInput = document.getElementById('amt');
+        const amtValue = amtInput.value;
         if (!amtValue) return alert('請輸入金額');
         
         const editId = document.getElementById('editId').value;
@@ -152,28 +153,32 @@ class App {
 
         if (editId) {
             const idx = this.expenses.findIndex(e => e.id === editId);
-            this.expenses[idx] = item;
+            if (idx !== -1) this.expenses[idx] = item;
         } else {
             this.expenses.push(item);
         }
         
         this.resetForm();
         this.render();
-        this.sync();
+        await this.sync();
     }
 
     edit(id) {
         const item = this.expenses.find(e => e.id === id);
         if (!item) return;
+        
         document.getElementById('editId').value = item.id;
         document.getElementById('date').value = item.date;
         document.getElementById('person').value = item.person;
         document.getElementById('cat').value = item.category;
         document.getElementById('amt').value = item.amount;
         document.getElementById('desc').value = item.description;
-        document.getElementById('formTitle').textContent = "✏️ 修改記錄";
-        document.getElementById('addBtn').textContent = "更新記錄";
+        
+        document.getElementById('formTitle').textContent = "✏️ 修改這筆記錄";
+        document.getElementById('addBtn').textContent = "確定修改";
         document.getElementById('cancelBtn').style.display = "block";
+        document.querySelectorAll('.form-group input, .form-group select').forEach(el => el.classList.add('edit-mode'));
+        
         document.getElementById('formCard').scrollIntoView({ behavior: 'smooth' });
     }
 
@@ -184,10 +189,11 @@ class App {
         document.getElementById('formTitle').textContent = "🧾 新增帳務";
         document.getElementById('addBtn').textContent = "儲存記錄";
         document.getElementById('cancelBtn').style.display = "none";
+        document.querySelectorAll('.edit-mode').forEach(el => el.classList.remove('edit-mode'));
     }
 
     async delete(id) {
-        if (!confirm('刪除這一筆嗎？')) return;
+        if (!confirm('確定刪除？')) return;
         this.expenses = this.expenses.filter(e => e.id !== id);
         this.render();
         await this.sync();
@@ -195,42 +201,41 @@ class App {
 
     async sync() {
         const status = document.getElementById('status');
-        status.textContent = '📡 同步雲端...';
+        status.textContent = '📡 上傳雲端中...';
         try {
             await fetch(MASTER_URL, {
                 method: 'POST',
                 body: JSON.stringify(this.expenses),
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' }
             });
-            status.textContent = '✅ 已存入雲端';
+            status.textContent = '✅ 已成功同步';
             localStorage.setItem('zm_data', JSON.stringify(this.expenses));
-        } catch (e) { alert('同步失敗'); }
+        } catch (e) { 
+            status.textContent = '⚠️ 同步失敗，請稍後刷新';
+        }
     }
 
     render() {
         const list = document.getElementById('list');
         list.innerHTML = this.expenses.slice().sort((a,b) => b.id - a.id).map(e => `
             <div class="record-item">
-                <div>
-                    <strong>${e.category}</strong> <small>(${e.person})</small><br>
-                    <span style="font-size:12px; color:#999;">${e.date} ${e.description}</span>
-                </div>
-                <div style="text-align:right">
-                    <span class="amt">$${Math.round(e.amount).toLocaleString()}</span>
+                <div style="flex:1;">
+                    <div style="font-weight:bold;">${e.category} <span style="font-weight:normal; font-size:12px; color:#666;">(${e.person})</span></div>
+                    <div style="font-size:12px; color:#999;">${e.date} ${e.description}</div>
                     <div class="actions">
                         <button class="btn-edit" onclick="app.edit('${e.id}')">修改</button>
                         <button class="btn-del" onclick="app.delete('${e.id}')">刪除</button>
                     </div>
                 </div>
+                <div class="amt">$${Math.round(e.amount).toLocaleString()}</div>
             </div>
-        `).join('');
+        `).join('') || '<p style="text-align:center; padding:20px; color:#999;">目前尚無記錄</p>';
 
         this.updateCharts();
     }
 
     updateCharts() {
-        const users = ['ZIV', 'MIN'];
-        users.forEach(user => {
+        ['ZIV', 'MIN'].forEach(user => {
             const userExps = this.expenses.filter(e => e.person === user);
             const totals = {};
             let sum = 0;
@@ -240,7 +245,8 @@ class App {
             });
             document.getElementById('total' + (user === 'ZIV' ? 'Ziv' : 'Min')).textContent = '總計: $' + Math.round(sum).toLocaleString();
 
-            const ctx = document.getElementById('chart' + (user === 'ZIV' ? 'Ziv' : 'Min')).getContext('2d');
+            const canvasId = 'chart' + (user === 'ZIV' ? 'Ziv' : 'Min');
+            const ctx = document.getElementById(canvasId).getContext('2d');
             if (this.charts[user]) this.charts[user].destroy();
             
             const entries = Object.entries(totals).sort((a,b) => b[1] - a[1]);
