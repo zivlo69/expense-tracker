@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Z&M記帳本</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #f3e7e9 0%, #f5f7fa 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .total-amount {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+
+        .card h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .pie-container {
+            height: 350px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f9f9f9;
+            border-radius: 10px;
+        }
+
+        .empty-message {
+            color: #999;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .category-list {
+            list-style: none;
+        }
+
+        .category-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .category-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .category-amount {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .category-percent {
+            font-size: 12px;
+            color: #999;
+            margin-left: 10px;
+        }
+
+        .form-card {
+            position: sticky;
+            top: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 15px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .records-section {
+            grid-column: 1 / -1;
+        }
+
+        .record-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .record-left {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .record-info p {
+            margin: 3px 0;
+            font-size: 14px;
+        }
+
+        .record-info p:first-child {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .record-info p:last-child {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .record-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .record-amount {
+            font-weight: bold;
+            color: #333;
+            min-width: 80px;
+        }
+
+        .btn-delete {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-delete:hover {
+            background: #ff5252;
+        }
+
+        .settings-btn {
+            background: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #ddd;
+            color: #333;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-card {
+                position: static;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .header-info {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script>
+        // 夫妻記帳本 - 完整版本
+
+        const categories = ['早餐', '中餐', '晚餐', '消夜', '飲料', '油錢', '停車', 'ETC', '車輛保養維修', '車輛保險稅金', '交通車票計程車', '房貸', '水費', '電費', '瓦斯費', '大樓管理費', '治裝', '教育', '娛樂', '家用修繕', '住家雜費', '食材費用', '零食餅乾', '住宿費', '醫療', '保險費', '家用網路', '手機費', '稅TAX'];
+
+        const colors = {
+            '早餐': '#FF6B6B',
+            '中餐': '#FF8C42',
+            '晚餐': '#FFB84D',
+            '消夜': '#FFD93D',
+            '飲料': '#FF9999',
+            '油錢': '#4ECDC4',
+            '停車': '#45B7D1',
+            'ETC': '#00A8CC',
+            '車輛保養維修': '#0088CC',
+            '車輛保險稅金': '#0066AA',
+            '交通車票計程車': '#2E86AB',
+            '房貸': '#AA96DA',
+            '水費': '#5DADE2',
+            '電費': '#F4D03F',
+            '瓦斯費': '#EB984E',
+            '大樓管理費': '#85C1E2',
+            '治裝': '#F38181',
+            '教育': '#A8D8EA',
+            '娛樂': '#95E1D3',
+            '家用修繕': '#B4A7D6',
+            '住家雜費': '#FCBAD3',
+            '食材費用': '#A9DFBF',
+            '零食餅乾': '#F8B88B',
+            '住宿費': '#D7BDE2',
+            '醫療': '#F5B7B1',
+            '保險費': '#AED6F1',
+            '家用網路': '#A3E4D7',
+            '手機費': '#E8DAEF',
+            '稅TAX': '#D5A6BD'
+        };
+
+        // 從 localStorage 讀取數據
+        function loadExpenses() {
+            const saved = localStorage.getItem('expenses');
+            return saved ? JSON.parse(saved) : [];
+        }
+
+        // 保存到 localStorage
+        function saveExpenses(expenses) {
+            localStorage.setItem('expenses', JSON.stringify(expenses));
+        }
+
+        // 取得當月資料
+        function getCurrentMonthExpenses(expenses) {
+            const now = new Date();
+            const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            return expenses.filter(e => e.date.startsWith(currentMonth));
+        }
+
+        // 計算類別統計
+        function calculateCategoryTotals(monthlyExpenses) {
+            const totals = categories.map(cat => {
+                const total = monthlyExpenses
+                    .filter(e => e.category === cat)
+                    .reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+                return {
+                    name: cat,
+                    value: Math.round(total * 100) / 100,
+                    color: colors[cat]
+                };
+            }).filter(item => item.value > 0);
+            return totals;
+        }
+
+        // 主應用
+        class ExpenseApp {
+            constructor() {
+                this.expenses = loadExpenses();
+                this.formData = {
+                    date: new Date().toISOString().split('T')[0],
+                    category: '早餐',
+                    amount: '',
+                    description: '',
+                    person: 'ZIV'
+                };
+                this.showSettings = false;
+                this.googleSheetUrl = localStorage.getItem('googleSheetUrl') || '';
+                this.init();
+            }
+
+            init() {
+                this.render();
+                this.attachEventListeners();
+            }
+
+            getCurrentMonth() {
+                const now = new Date();
+                return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            }
+
+            render() {
+                const monthlyExpenses = getCurrentMonthExpenses(this.expenses);
+                const categoryTotals = calculateCategoryTotals(monthlyExpenses);
+                const totalExpense = categoryTotals.reduce((sum, item) => sum + item.value, 0);
+
+                const categoryOptionsHtml = categories.map(cat => `
+                    <option value="${cat}" ${this.formData.category === cat ? 'selected' : ''}>${cat}</option>
+                `).join('');
+
+                const html = `
+                    <div class="container">
+                        <!-- Header -->
+                        <div class="header">
+                            <div class="header-info">
+                                <h1>💑 Z&M記帳本</h1>
+                                <button class="settings-btn" id="settingsBtn">⚙️ 設定</button>
+                            </div>
+                            <p style="margin-top: 10px; opacity: 0.9;">
+                                ${this.getCurrentMonth()} · 本月共計: <span class="total-amount">NT$${totalExpense.toFixed(0)}</span>
+                            </p>
+                        </div>
+
+                        <!-- Main Content -->
+                        <div class="main-grid">
+                            <!-- Left: Pie Chart & Statistics -->
+                            <div>
+                                <!-- Pie Chart -->
+                                <div class="card">
+                                    <h2>📊 本月支出分布</h2>
+                                    <div class="pie-container">
+                                        ${categoryTotals.length > 0 
+                                            ? '<p style="color: #999;">支出分布已統計</p>'
+                                            : '<p class="empty-message">還沒有本月記帳記錄</p>'
+                                        }
+                                    </div>
+                                </div>
+
+                                <!-- Category Statistics -->
+                                <div class="card" style="margin-top: 30px;">
+                                    <h2>💰 類別統計</h2>
+                                    ${categoryTotals.length > 0 
+                                        ? `<ul class="category-list">
+                                            ${categoryTotals
+                                                .sort((a, b) => b.value - a.value)
+                                                .map(item => `
+                                                    <li class="category-item">
+                                                        <div class="category-name">
+                                                            <div class="color-dot" style="background-color: ${item.color}"></div>
+                                                            <span>${item.name}</span>
+                                                        </div>
+                                                        <div>
+                                                            <span class="category-amount">NT$${item.value.toFixed(0)}</span>
+                                                            <span class="category-percent">${((item.value / totalExpense) * 100).toFixed(1)}%</span>
+                                                        </div>
+                                                    </li>
+                                                `).join('')
+                                            }
+                                        </ul>`
+                                        : '<p class="empty-message">暫無記錄</p>'
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Right: Input Form -->
+                            <div class="form-card">
+                                <div class="card">
+                                    <h2>🧾 記一筆帳</h2>
+                                    
+                                    <div class="form-group">
+                                        <label>日期</label>
+                                        <input type="date" id="date" value="${this.formData.date}">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>記帳人</label>
+                                        <select id="person">
+                                            <option value="ZIV" ${this.formData.person === 'ZIV' ? 'selected' : ''}>ZIV</option>
+                                            <option value="MIN" ${this.formData.person === 'MIN' ? 'selected' : ''}>MIN</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>項目</label>
+                                        <select id="category">
+                                            ${categoryOptionsHtml}
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>金額 (NT$)</label>
+                                        <input type="number" id="amount" placeholder="0" value="${this.formData.amount}">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>描述</label>
+                                        <input type="text" id="description" placeholder="例: 便利商店早餐" value="${this.formData.description}">
+                                    </div>
+
+                                    <button class="btn-submit" id="submitBtn">➕ 記帳</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Records Section -->
+                        <div class="card records-section">
+                            <h2>📝 本月記錄</h2>
+                            ${monthlyExpenses.length > 0 
+                                ? `<div>
+                                    ${[...monthlyExpenses].reverse().map(expense => `
+                                        <div class="record-item">
+                                            <div class="record-left">
+                                                <div class="color-dot" style="background-color: ${colors[expense.category]}"></div>
+                                                <div class="record-info">
+                                                    <p>${expense.category}</p>
+                                                    <p>${expense.date} · ${expense.person} ${expense.description ? `· ${expense.description}` : ''}</p>
+                                                </div>
+                                            </div>
+                                            <div class="record-right">
+                                                <span class="record-amount">NT$${expense.amount.toFixed(0)}</span>
+                                                <button class="btn-delete" onclick="app.deleteExpense(${expense.id})">刪除</button>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>`
+                                : '<p class="empty-message">本月還沒有記帳記錄</p>'
+                            }
+                        </div>
+
+                        <!-- Settings Modal -->
+                        ${this.showSettings ? `
+                            <div class="modal" id="settingsModal">
+                                <div class="modal-content">
+                                    <h2>⚙️ 設定</h2>
+                                    <div class="form-group">
+                                        <label>Google Sheets API URL</label>
+                                        <input type="text" id="urlInput" placeholder="貼上 Google Sheets Apps Script 部署 URL" value="${this.googleSheetUrl}">
+                                        <p style="font-size: 12px; color: #999; margin-top: 5px;">建立 Google Sheets 和 Apps Script 後，複製部署 URL</p>
+                                    </div>
+                                    <div class="modal-buttons">
+                                        <button class="btn-primary" id="saveUrlBtn">保存</button>
+                                        <button class="btn-secondary" id="cancelBtn">取消</button>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+
+                document.getElementById('root').innerHTML = html;
+            }
+
+            attachEventListeners() {
+                // 表單輸入
+                const dateInput = document.getElementById('date');
+                const personSelect = document.getElementById('person');
+                const categorySelect = document.getElementById('category');
+                const amountInput = document.getElementById('amount');
+                const descriptionInput = document.getElementById('description');
+                const submitBtn = document.getElementById('submitBtn');
+                const settingsBtn = document.getElementById('settingsBtn');
+
+                if (dateInput) dateInput.addEventListener('change', (e) => {
+                    this.formData.date = e.target.value;
+                });
+                if (personSelect) personSelect.addEventListener('change', (e) => {
+                    this.formData.person = e.target.value;
+                });
+                if (categorySelect) categorySelect.addEventListener('change', (e) => {
+                    this.formData.category = e.target.value;
+                });
+                if (amountInput) amountInput.addEventListener('input', (e) => {
+                    this.formData.amount = e.target.value;
+                });
+                if (descriptionInput) descriptionInput.addEventListener('input', (e) => {
+                    this.formData.description = e.target.value;
+                });
+
+                // 提交按鈕
+                if (submitBtn) submitBtn.addEventListener('click', () => this.addExpense());
+
+                // 設定按鈕
+                if (settingsBtn) settingsBtn.addEventListener('click', () => {
+                    this.showSettings = !this.showSettings;
+                    this.render();
+                    this.attachEventListeners();
+                });
+
+                // 設定模態框
+                if (this.showSettings) {
+                    const saveUrlBtn = document.getElementById('saveUrlBtn');
+                    const cancelBtn = document.getElementById('cancelBtn');
+                    if (saveUrlBtn) saveUrlBtn.addEventListener('click', () => this.saveUrl());
+                    if (cancelBtn) cancelBtn.addEventListener('click', () => {
+                        this.showSettings = false;
+                        this.render();
+                        this.attachEventListeners();
+                    });
+                }
+            }
+
+            addExpense() {
+                if (!this.formData.amount || !this.formData.category) {
+                    alert('請填寫金額和項目');
+                    return;
+                }
+
+                const newExpense = {
+                    id: Date.now(),
+                    ...this.formData,
+                    amount: parseFloat(this.formData.amount)
+                };
+
+                this.expenses.push(newExpense);
+                saveExpenses(this.expenses);
+
+                // 發送到 Google Sheets
+                if (this.googleSheetUrl) {
+                    this.sendToGoogleSheet(newExpense);
+                }
+
+                // 重置表單
+                this.formData = {
+                    date: new Date().toISOString().split('T')[0],
+                    category: '早餐',
+                    amount: '',
+                    description: '',
+                    person: 'ZIV'
+                };
+
+                this.render();
+                this.attachEventListeners();
+            }
+
+            deleteExpense(id) {
+                this.expenses = this.expenses.filter(e => e.id !== id);
+                saveExpenses(this.expenses);
+                this.render();
+                this.attachEventListeners();
+            }
+
+            sendToGoogleSheet(expense) {
+                try {
+                    fetch(this.googleSheetUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            date: expense.date,
+                            person: expense.person,
+                            category: expense.category,
+                            amount: expense.amount,
+                            description: expense.description
+                        })
+                    });
+                    console.log('已發送到 Google Sheets');
+                } catch (error) {
+                    console.log('Google Sheets 同步提示：', error);
+                }
+            }
+
+            saveUrl() {
+                const urlInput = document.getElementById('urlInput');
+                if (urlInput) {
+                    const url = urlInput.value;
+                    localStorage.setItem('googleSheetUrl', url);
+                    this.googleSheetUrl = url;
+                    this.showSettings = false;
+                    alert('Google Sheets URL 已保存');
+                    this.render();
+                    this.attachEventListeners();
+                }
+            }
+        }
+
+        // 啟動應用
+        const app = new ExpenseApp();
+    </script>
+</body>
+</html>
