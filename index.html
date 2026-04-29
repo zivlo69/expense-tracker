@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Z&M記帳本 V2</title>
+    <title>Z&M 雲端記帳本 V3</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
-            background: linear-gradient(135deg, #f3e7e9 0%, #f5f7fa 100%);
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -16,252 +16,249 @@
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 30px;
+            padding: 25px;
             border-radius: 15px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         }
-        .header h1 { font-size: 28px; }
+        .header h1 { font-size: 24px; }
         .btn-group { display: flex; gap: 10px; }
-        .settings-btn {
-            background: rgba(255, 255, 255, 0.9);
-            border: none;
-            padding: 10px 20px;
+        .btn {
+            padding: 10px 15px;
             border-radius: 8px;
+            border: none;
             cursor: pointer;
-            font-size: 14px;
             font-weight: bold;
-            transition: all 0.2s;
+            font-size: 14px;
+            transition: 0.2s;
         }
-        .settings-btn:hover { background: white; transform: translateY(-1px); }
-        .sync-btn { background: #4CAF50; color: white; }
-        .sync-btn:hover { background: #45a049; }
-        .main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-bottom: 30px; }
-        .card { background: white; border-radius: 15px; padding: 25px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); height: fit-content; }
-        .card h2 { font-size: 20px; margin-bottom: 20px; color: #333; border-left: 4px solid #667eea; padding-left: 10px; }
-        .category-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-bottom: 8px; font-size: 14px; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 5px; color: #666; }
-        .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
-        .form-group input:focus { border-color: #667eea; }
-        .btn-submit { width: 100%; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .btn-submit:hover { opacity: 0.9; box-shadow: 0 5px 15px rgba(102,126,234,0.4); }
-        .record-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #fff; border-bottom: 1px solid #eee; transition: 0.2s; }
-        .record-item:hover { background: #fcfcfc; }
-        .btn-delete { background: #ffefef; color: #ff6b6b; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; }
-        .btn-delete:hover { background: #ff6b6b; color: white; }
-        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .btn-settings { background: rgba(255,255,255,0.2); color: white; }
+        .btn-sync { background: #4CAF50; color: white; }
+        .btn-sync:disabled { background: #ccc; cursor: not-allowed; }
+        
+        .main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card h2 { font-size: 18px; margin-bottom: 15px; color: #333; border-left: 4px solid #667eea; padding-left: 10px; }
+        
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; outline: none; }
+        
+        .btn-main { width: 100%; padding: 15px; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        
+        .record-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
+        .record-info { line-height: 1.4; }
+        .amt { font-weight: bold; color: #333; margin-right: 10px; }
+        .btn-del { color: #ff6b6b; background: none; border: none; cursor: pointer; font-size: 12px; }
+        
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 100; }
         .modal.active { display: flex; }
-        .modal-content { background: white; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; }
-        .sync-status { font-size: 12px; margin-top: 8px; color: rgba(255,255,255,0.8); }
-        @media (max-width: 768px) { .main-grid { grid-template-columns: 1fr; } .header { flex-direction: column; align-items: flex-start; gap: 15px; } .btn-group { width: 100%; } .settings-btn { flex: 1; } }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; }
+        
+        @media (max-width: 768px) {
+            .main-grid { grid-template-columns: 1fr; }
+            .header { flex-direction: column; text-align: center; gap: 15px; }
+        }
+        .sync-info { font-size: 11px; margin-top: 5px; opacity: 0.8; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div>
-                <h1>💑 Z&M記帳本 V2</h1>
-                <div id="syncStatus" class="sync-status">最後同步: 尚未同步</div>
-            </div>
-            <div class="btn-group">
-                <button class="settings-btn sync-btn" id="manualSyncBtn">🔄 同步至試算表</button>
-                <button class="settings-btn" id="settingsBtn">⚙️ 設定</button>
-            </div>
+
+<div class="container">
+    <div class="header">
+        <div>
+            <h1>💑 Z&M 雲端記帳本</h1>
+            <div id="syncStatus" class="sync-info">正在載入雲端資料...</div>
         </div>
-
-        <div class="main-grid">
-            <div>
-                <div class="card">
-                    <h2>📊 類別支出統計</h2>
-                    <div id="categoryStats"></div>
-                </div>
-                <div class="card" style="margin-top: 30px;">
-                    <h2>📝 歷史記錄</h2>
-                    <div id="recordsList"></div>
-                </div>
-            </div>
-
-            <div class="form-card">
-                <div class="card">
-                    <h2>🧾 記一筆帳</h2>
-                    <div class="form-group"><label>日期</label><input type="date" id="date"></div>
-                    <div class="form-group"><label>記帳人</label><select id="person"><option value="ZIV">ZIV</option><option value="MIN">MIN</option></select></div>
-                    <div class="form-group"><label>項目</label><select id="category"></select></div>
-                    <div class="form-group"><label>金額 (NT$)</label><input type="number" id="amount" placeholder="輸入金額" inputmode="numeric"></div>
-                    <div class="form-group"><label>描述</label><input type="text" id="description" placeholder="備註描述"></div>
-                    <button class="btn-submit" id="submitBtn">➕ 儲存記錄</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="settingsModal" class="modal">
-            <div class="modal-content">
-                <h2>⚙️ 雲端同步設定</h2>
-                <div class="form-group">
-                    <label>Google Apps Script 部署網址</label>
-                    <input type="text" id="urlInput" placeholder="https://script.google.com/macros/s/...">
-                </div>
-                <p style="font-size:12px; color:#999; margin-bottom:15px;">同步會將目前所有資料覆蓋至雲端試算表。</p>
-                <button class="btn-submit" id="saveUrlBtn">儲存設定</button>
-                <button class="settings-btn" style="width:100%; margin-top:10px;" id="cancelBtn">取消</button>
-            </div>
+        <div class="btn-group">
+            <button class="btn btn-sync" id="syncBtn">🔄 同步雲端</button>
+            <button class="btn btn-settings" id="setBtn">⚙️ 設定</button>
         </div>
     </div>
 
-    <script>
-        const categories = ['早餐', '中餐', '晚餐', '消夜', '飲料', '油錢', '停車', 'ETC', '車輛保養維修', '車輛保險稅金', '交通車票計程車', '房貸', '水費', '電費', '瓦斯費', '大樓管理費', '治裝', '教育', '娛樂', '家用修繕', '住家雜費', '食材費用', '零食餅乾', '住宿費', '醫療', '保險費', '家用網路', '手機費', '稅TAX'];
-        
-        class ExpenseApp {
-            constructor() {
-                // 從本地空間讀取資料
-                this.expenses = JSON.parse(localStorage.getItem('zm_expenses') || '[]');
-                this.googleSheetUrl = localStorage.getItem('zm_config_url') || '';
-                this.init();
-            }
+    <div class="main-grid">
+        <div>
+            <div class="card">
+                <h2>📊 本月類別統計</h2>
+                <div id="stats"></div>
+            </div>
+            <div class="card">
+                <h2>📝 帳務記錄</h2>
+                <div id="list"></div>
+            </div>
+        </div>
 
-            init() {
-                // 初始化下拉選單
-                const catSelect = document.getElementById('category');
-                categories.forEach(c => {
-                    const opt = document.createElement('option');
-                    opt.value = c; opt.textContent = c;
-                    catSelect.appendChild(opt);
-                });
+        <div class="card" style="height: fit-content; position: sticky; top: 20px;">
+            <h2>🧾 記一筆</h2>
+            <div class="form-group"><label>日期</label><input type="date" id="date"></div>
+            <div class="form-group"><label>記帳人</label><select id="person"><option value="ZIV">ZIV</option><option value="MIN">MIN</option></select></div>
+            <div class="form-group"><label>分類</label><select id="cat"></select></div>
+            <div class="form-group"><label>金額</label><input type="number" id="amt" placeholder="0" inputmode="numeric"></div>
+            <div class="form-group"><label>描述</label><input type="text" id="desc" placeholder="備註"></div>
+            <button class="btn-main" id="addBtn">儲存記錄</button>
+        </div>
+    </div>
+</div>
 
-                // 預設日期為今天
-                document.getElementById('date').value = new Date().toISOString().split('T')[0];
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <h2>⚙️ 系統設定</h2>
+        <div class="form-group">
+            <label>Google Script URL</label>
+            <input type="text" id="urlInput" placeholder="貼上部署網址">
+        </div>
+        <button class="btn-main" id="saveUrlBtn">儲存網址</button>
+        <button class="btn" style="width:100%; margin-top:10px;" id="closeBtn">關閉</button>
+    </div>
+</div>
 
-                // 綁定按鈕事件
-                document.getElementById('submitBtn').addEventListener('click', () => this.addExpense());
-                document.getElementById('manualSyncBtn').addEventListener('click', () => this.syncToCloud());
-                document.getElementById('settingsBtn').addEventListener('click', () => this.toggleModal(true));
-                document.getElementById('saveUrlBtn').addEventListener('click', () => this.saveUrl());
-                document.getElementById('cancelBtn').addEventListener('click', () => this.toggleModal(false));
-                
-                this.render();
-            }
+<script>
+const categories = ['早餐', '中餐', '晚餐', '消夜', '飲料', '油錢', '停車', 'ETC', '車輛保養維修', '車輛保險稅金', '交通車票計程車', '房貸', '水費', '電費', '瓦斯費', '大樓管理費', '治裝', '教育', '娛樂', '家用修繕', '住家雜費', '食材費用', '零食餅乾', '住宿費', '醫療', '保險費', '家用網路', '手機費', '稅TAX'];
 
-            addExpense() {
-                const amountInput = document.getElementById('amount');
-                const descInput = document.getElementById('description');
-                
-                if(!amountInput.value) return alert('請輸入金額');
-                
-                const item = {
-                    id: Date.now(), // 唯一 ID
-                    date: document.getElementById('date').value,
-                    person: document.getElementById('person').value,
-                    category: document.getElementById('category').value,
-                    amount: parseFloat(amountInput.value),
-                    description: descInput.value
-                };
-                
-                this.expenses.push(item);
-                this.saveAndRender();
-                
-                // 清空輸入框
-                amountInput.value = '';
-                descInput.value = '';
-            }
+class App {
+    constructor() {
+        this.expenses = JSON.parse(localStorage.getItem('zm_data') || '[]');
+        this.url = localStorage.getItem('zm_url') || '';
+        this.init();
+    }
 
-            deleteExpense(id) {
-                if(!confirm('確定要刪除這筆記錄嗎？\n(刪除後需手動點擊同步才會更新雲端)')) return;
-                this.expenses = this.expenses.filter(e => e.id !== id);
-                this.saveAndRender();
-            }
+    async init() {
+        // 初始化選單
+        const catSelect = document.getElementById('cat');
+        categories.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c; opt.textContent = c;
+            catSelect.appendChild(opt);
+        });
+        document.getElementById('date').value = new Date().toISOString().split('T')[0];
 
-            saveAndRender() {
-                localStorage.setItem('zm_expenses', JSON.stringify(this.expenses));
-                this.render();
-            }
+        // 綁定事件
+        document.getElementById('addBtn').onclick = () => this.add();
+        document.getElementById('syncBtn').onclick = () => this.sync();
+        document.getElementById('setBtn').onclick = () => document.getElementById('modal').classList.add('active');
+        document.getElementById('closeBtn').onclick = () => document.getElementById('modal').classList.remove('active');
+        document.getElementById('saveUrlBtn').onclick = () => {
+            this.url = document.getElementById('urlInput').value;
+            localStorage.setItem('zm_url', this.url);
+            document.getElementById('modal').classList.remove('active');
+            this.fetchCloud();
+        };
 
-            render() {
-                const list = document.getElementById('recordsList');
-                const stats = document.getElementById('categoryStats');
-                
-                // 渲染歷史清單 (最新的在上面)
-                list.innerHTML = this.expenses.slice().reverse().map(e => `
-                    <div class="record-item">
-                        <div>
-                            <strong style="color:#444;">${e.category}</strong> 
-                            <span style="font-size:11px; color:#667eea; background:#eef2ff; padding:2px 6px; border-radius:4px; margin-left:5px;">${e.person}</span>
-                            <br>
-                            <span style="font-size:12px; color:#999;">${e.date} ${e.description ? ' - ' + e.description : ''}</span>
-                        </div>
-                        <div style="text-align:right;">
-                            <span style="margin-right:15px; font-weight:bold; color:#333;">$${e.amount.toLocaleString()}</span>
-                            <button class="btn-delete" onclick="app.deleteExpense(${e.id})">刪除</button>
-                        </div>
-                    </div>
-                `).join('') || '<p style="text-align:center;color:#999;padding:20px;">尚無記帳記錄</p>';
-
-                // 渲染類別統計
-                const totals = {};
-                let grandTotal = 0;
-                this.expenses.forEach(e => {
-                    totals[e.category] = (totals[e.category] || 0) + e.amount;
-                    grandTotal += e.amount;
-                });
-                
-                const sortedStats = Object.entries(totals).sort((a,b)=>b[1]-a[1]);
-                stats.innerHTML = sortedStats.map(([n, v]) => `
-                    <div class="category-item">
-                        <span>${n}</span> 
-                        <strong>$${v.toLocaleString()} <small style="font-weight:normal; color:#999; font-size:11px;">(${((v/grandTotal)*100).toFixed(1)}%)</small></strong>
-                    </div>
-                `).join('') || '<p style="text-align:center;color:#999;padding:20px;">暫無統計資料</p>';
-            }
-
-            async syncToCloud() {
-                if(!this.googleSheetUrl) return alert('請先點選「設定」並貼上 Google Script 部署網址');
-                
-                const btn = document.getElementById('manualSyncBtn');
-                const statusTxt = document.getElementById('syncStatus');
-                
-                const originalText = btn.textContent;
-                btn.textContent = '同步中...';
-                btn.disabled = true;
-
-                try {
-                    // 同步邏輯：將目前的本機陣列全部傳給後端
-                    // 注意：fetch POST 到 GAS 網址通常會有 CORS 問題，這裡使用 no-cors 模式
-                    await fetch(this.googleSheetUrl, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(this.expenses)
-                    });
-                    
-                    const now = new Date().toLocaleTimeString();
-                    statusTxt.textContent = `最後同步: ${now} (成功)`;
-                    alert('同步成功！\n雲端試算表已更新為最新狀態。');
-                } catch (e) {
-                    console.error(e);
-                    alert('同步失敗，請檢查 URL 是否正確或網路是否通暢。');
-                } finally {
-                    btn.textContent = originalText;
-                    btn.disabled = false;
-                }
-            }
-
-            toggleModal(s) { document.getElementById('settingsModal').classList.toggle('active', s); }
-            
-            saveUrl() {
-                const val = document.getElementById('urlInput').value.trim();
-                if(!val) return alert('請輸入網址');
-                this.googleSheetUrl = val;
-                localStorage.setItem('zm_config_url', val);
-                this.toggleModal(false);
-                alert('設定已儲存！');
-            }
+        // 啟動時自動從雲端抓取一次
+        if (this.url) {
+            await this.fetchCloud();
+        } else {
+            document.getElementById('syncStatus').textContent = '請先設定 URL';
         }
+        this.render();
+    }
 
-        // 啟動 App
-        const app = new ExpenseApp();
-    </script>
+    async fetchCloud() {
+        const status = document.getElementById('syncStatus');
+        try {
+            status.textContent = '同步中...';
+            const res = await fetch(this.url);
+            const data = await res.json();
+            if (Array.isArray(data)) {
+                this.expenses = data;
+                this.saveLocal();
+                status.textContent = '最後同步: ' + new Date().toLocaleTimeString();
+            }
+        } catch (e) {
+            status.textContent = '雲端連線失敗，目前為離線模式';
+        }
+        this.render();
+    }
+
+    add() {
+        const amt = document.getElementById('amt').value;
+        if (!amt) return alert('請輸入金額');
+        const item = {
+            id: Date.now().toString(),
+            date: document.getElementById('date').value,
+            person: document.getElementById('person').value,
+            category: document.getElementById('cat').value,
+            amount: parseFloat(amt),
+            description: document.getElementById('desc').value
+        };
+        this.expenses.push(item);
+        this.saveLocal();
+        this.render();
+        document.getElementById('amt').value = '';
+        document.getElementById('desc').value = '';
+    }
+
+    delete(id) {
+        if (!confirm('刪除後需按「同步」才會更新雲端，確定？')) return;
+        this.expenses = this.expenses.filter(e => e.id !== id);
+        this.saveLocal();
+        this.render();
+    }
+
+    async sync() {
+        if (!this.url) return alert('請先設定 URL');
+        const btn = document.getElementById('syncBtn');
+        btn.disabled = true;
+        btn.textContent = '傳送中...';
+        try {
+            await fetch(this.url, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(this.expenses)
+            });
+            alert('已同步到雲端！');
+            this.fetchCloud();
+        } catch (e) {
+            alert('同步失敗');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '🔄 同步雲端';
+        }
+    }
+
+    saveLocal() {
+        localStorage.setItem('zm_data', JSON.stringify(this.expenses));
+    }
+
+    render() {
+        const list = document.getElementById('list');
+        const stats = document.getElementById('stats');
+        
+        // 渲染清單
+        list.innerHTML = this.expenses.slice().reverse().map(e => `
+            <div class="record-item">
+                <div class="record-info">
+                    <strong>${e.category}</strong> <small>(${e.person})</small><br>
+                    <span style="font-size:12px; color:#999;">${e.date} ${e.description}</span>
+                </div>
+                <div>
+                    <span class="amt">$${e.amount.toLocaleString()}</span>
+                    <button class="btn-del" onclick="app.delete('${e.id}')">刪除</button>
+                </div>
+            </div>
+        `).join('') || '<p style="text-align:center; color:#999;">目前沒有資料</p>';
+
+        // 渲染統計
+        const totalMap = {};
+        let grandTotal = 0;
+        this.expenses.forEach(e => {
+            totalMap[e.category] = (totalMap[e.category] || 0) + e.amount;
+            grandTotal += e.amount;
+        });
+        const sorted = Object.entries(totalMap).sort((a,b) => b[1]-a[1]);
+        stats.innerHTML = sorted.map(([k, v]) => `
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:14px;">
+                <span>${k}</span>
+                <span><strong>$${v.toLocaleString()}</strong> <small>(${((v/grandTotal)*100).toFixed(1)}%)</small></span>
+            </div>
+        `).join('') || '<p style="text-align:center; color:#999;">尚無資料</p>';
+    }
+}
+
+const app = new App();
+</script>
 </body>
 </html>
