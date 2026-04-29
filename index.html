@@ -3,35 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Z&M 2026 雲端記帳本</title>
+    <title>Z&M 2026 雲端記帳</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --primary: #667eea; --bg-grad: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
         .theme-min { --primary: #ff4d4f; --bg-grad: linear-gradient(135deg, #fff1f0 0%, #ffccc7 100%); }
-        
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; background: var(--bg-grad); min-height: 100vh; padding: 15px; transition: 0.3s; }
-        .container { max-width: 800px; margin: 0 auto; }
-        
+        .container { max-width: 900px; margin: 0 auto; }
         .header { background: var(--primary); color: white; padding: 20px; border-radius: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
-        .btn-sync { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .btn-sync { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
         
+        /* 雙圓餅圖佈局 */
+        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
         .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        .chart-container { position: relative; height: 220px; width: 100%; margin-bottom: 10px; }
+        .chart-box { text-align: center; }
+        .chart-container { position: relative; height: 180px; width: 100%; margin: 10px 0; }
         
         .form-group { margin-bottom: 10px; }
         .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 3px; }
         .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; }
         
-        .btn-main { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .btn-main { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .btn-cancel { width: 100%; padding: 10px; background: #999; color: white; border: none; border-radius: 8px; margin-top: 5px; cursor: pointer; display: none; }
         
         .record-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
-        .record-item:last-child { border-bottom: none; }
-        .amt { font-weight: bold; font-size: 16px; color: #333; }
-        .btn-del { color: #ff7875; background: none; border: none; cursor: pointer; font-size: 12px; margin-top: 5px; }
+        .amt { font-weight: bold; font-size: 16px; }
+        .actions { display: flex; gap: 10px; margin-top: 5px; }
+        .btn-edit { color: #667eea; background: none; border: none; cursor: pointer; font-size: 12px; }
+        .btn-del { color: #ff7875; background: none; border: none; cursor: pointer; font-size: 12px; }
         
-        .stats-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border-bottom: 1px dashed #eee; }
-        .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+        @media (max-width: 600px) { .charts-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body id="bodyTag">
@@ -45,50 +47,42 @@
         <button class="btn-sync" onclick="app.fetchCloud()">🔄 刷新資料</button>
     </div>
 
-    <div class="card">
-        <h3 style="margin-bottom:10px;">📊 支出佔比</h3>
-        <div class="chart-container"><canvas id="expenseChart"></canvas></div>
-        <div id="statsList"></div>
+    <div class="charts-grid">
+        <div class="card chart-box">
+            <h4>🤴 ZIV 支出佔比</h4>
+            <div class="chart-container"><canvas id="chartZiv"></canvas></div>
+            <div id="totalZiv" style="font-weight:bold; color:#667eea;">$0</div>
+        </div>
+        <div class="card chart-box">
+            <h4>👸 MIN 支出佔比</h4>
+            <div class="chart-container"><canvas id="chartMin"></canvas></div>
+            <div id="totalMin" style="font-weight:bold; color:#ff4d4f;">$0</div>
+        </div>
     </div>
 
-    <div class="card">
-        <h3 style="margin-bottom:10px;">🧾 新增帳務</h3>
-        <div class="form-group">
-            <label>日期</label>
-            <input type="date" id="date">
-        </div>
-        <div class="form-group">
-            <label>記帳人 (自動記憶)</label>
+    <div class="card" id="formCard">
+        <h3 id="formTitle">🧾 新增帳務</h3>
+        <input type="hidden" id="editId">
+        <div class="form-group"><label>日期</label><input type="date" id="date"></div>
+        <div class="form-group"><label>記帳人</label>
             <select id="person" onchange="app.handleUserChange(this.value)">
-                <option value="ZIV">ZIV</option>
-                <option value="MIN">MIN</option>
+                <option value="ZIV">ZIV</option><option value="MIN">MIN</option>
             </select>
         </div>
-        <div class="form-group">
-            <label>分類</label>
-            <select id="cat"></select>
-        </div>
-        <div class="form-group">
-            <label>金額</label>
-            <input type="number" id="amt" placeholder="輸入數字" inputmode="numeric">
-        </div>
-        <div class="form-group">
-            <label>描述</label>
-            <input type="text" id="desc" placeholder="點了什麼？">
-        </div>
-        <button class="btn-main" id="addBtn">儲存並同步雲端</button>
+        <div class="form-group"><label>分類</label><select id="cat"></select></div>
+        <div class="form-group"><label>金額</label><input type="number" id="amt" placeholder="0" inputmode="numeric"></div>
+        <div class="form-group"><label>描述</label><input type="text" id="desc" placeholder="備註"></div>
+        <button class="btn-main" id="addBtn">儲存記錄</button>
+        <button class="btn-cancel" id="cancelBtn" onclick="app.resetForm()">取消修改</button>
     </div>
 
     <div class="card">
-        <h3 style="margin-bottom:10px;">📝 最近記錄</h3>
+        <h3>📝 最近記錄</h3>
         <div id="list"></div>
     </div>
 </div>
 
 <script>
-// ==========================================
-// 1. 請在此處填入你最新的 GAS 部署網址
-// ==========================================
 const MASTER_URL = "https://script.google.com/macros/s/AKfycbyyr-CM-850Ykt0sTaCaSF-5lYPULMr1PiljNyyspQvg1cLbI1_ChvwUGEFYTJPkCs9/exec"; 
 
 const categories = ['早餐', '中餐', '晚餐', '消夜', '飲料', '油錢', '停車', 'ETC', '車輛保養維修', '車輛保險稅金', '交通車票計程車', '房貸', '水費', '電費', '瓦斯費', '大樓管理費', '治裝', '教育', '娛樂', '家用修繕', '住家雜費', '食材費用', '零食餅乾', '住宿費', '醫療', '保險費', '家用網路', '手機費', '稅TAX'];
@@ -98,14 +92,13 @@ class App {
     constructor() {
         this.expenses = JSON.parse(localStorage.getItem('zm_data') || '[]');
         this.currentUser = localStorage.getItem('zm_user') || 'ZIV';
-        this.chart = null;
+        this.charts = { ZIV: null, MIN: null };
         this.init();
     }
 
     init() {
         document.getElementById('person').value = this.currentUser;
         this.applyUserTheme(this.currentUser);
-
         const catSelect = document.getElementById('cat');
         categories.forEach(c => {
             const opt = document.createElement('option');
@@ -113,10 +106,7 @@ class App {
             catSelect.appendChild(opt);
         });
         document.getElementById('date').value = new Date().toISOString().split('T')[0];
-
-        document.getElementById('addBtn').onclick = () => this.add();
-        
-        // 初始載入雲端資料（確保看到對方的最新記錄）
+        document.getElementById('addBtn').onclick = () => this.save();
         this.fetchCloud();
     }
 
@@ -127,20 +117,13 @@ class App {
     }
 
     applyUserTheme(user) {
-        const body = document.getElementById('bodyTag');
-        const title = document.getElementById('titleTxt');
-        if (user === 'MIN') {
-            body.classList.add('theme-min');
-            title.textContent = 'MIN 2026 記帳';
-        } else {
-            body.classList.remove('theme-min');
-            title.textContent = 'ZIV 2026 記帳';
-        }
+        document.getElementById('bodyTag').className = user === 'MIN' ? 'theme-min' : '';
+        document.getElementById('titleTxt').textContent = user + ' 2026 記帳';
     }
 
     async fetchCloud() {
         const status = document.getElementById('status');
-        status.textContent = '☁️ 正在抓取最新雲端資料...';
+        status.textContent = '☁️ 同步中...';
         try {
             const res = await fetch(MASTER_URL);
             const data = await res.json();
@@ -149,35 +132,58 @@ class App {
                 localStorage.setItem('zm_data', JSON.stringify(this.expenses));
                 status.textContent = '最後更新: ' + new Date().toLocaleTimeString();
             }
-        } catch (e) {
-            status.textContent = '❌ 目前無法讀取雲端';
-        }
+        } catch (e) { status.textContent = '❌ 離線模式'; }
         this.render();
     }
 
-    async add() {
+    save() {
         const amtValue = document.getElementById('amt').value;
-        if (!amtValue) return alert('金額咧？');
+        if (!amtValue) return alert('請輸入金額');
         
+        const editId = document.getElementById('editId').value;
         const item = {
-            id: Date.now().toString(),
+            id: editId || Date.now().toString(),
             date: document.getElementById('date').value,
             person: document.getElementById('person').value,
             category: document.getElementById('cat').value,
             amount: parseFloat(amtValue),
             description: document.getElementById('desc').value || ""
         };
+
+        if (editId) {
+            const idx = this.expenses.findIndex(e => e.id === editId);
+            this.expenses[idx] = item;
+        } else {
+            this.expenses.push(item);
+        }
         
-        // 先存入本地，確保 UI 立即反應
-        this.expenses.push(item);
+        this.resetForm();
         this.render();
-        
-        // 清空欄位
-        document.getElementById('amt').value = '';
-        document.getElementById('desc').value = '';
-        
-        // 同步雲端
-        await this.sync();
+        this.sync();
+    }
+
+    edit(id) {
+        const item = this.expenses.find(e => e.id === id);
+        if (!item) return;
+        document.getElementById('editId').value = item.id;
+        document.getElementById('date').value = item.date;
+        document.getElementById('person').value = item.person;
+        document.getElementById('cat').value = item.category;
+        document.getElementById('amt').value = item.amount;
+        document.getElementById('desc').value = item.description;
+        document.getElementById('formTitle').textContent = "✏️ 修改記錄";
+        document.getElementById('addBtn').textContent = "更新記錄";
+        document.getElementById('cancelBtn').style.display = "block";
+        document.getElementById('formCard').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    resetForm() {
+        document.getElementById('editId').value = "";
+        document.getElementById('amt').value = "";
+        document.getElementById('desc').value = "";
+        document.getElementById('formTitle').textContent = "🧾 新增帳務";
+        document.getElementById('addBtn').textContent = "儲存記錄";
+        document.getElementById('cancelBtn').style.display = "none";
     }
 
     async delete(id) {
@@ -189,79 +195,63 @@ class App {
 
     async sync() {
         const status = document.getElementById('status');
-        status.textContent = '📡 資料傳送中...';
+        status.textContent = '📡 同步雲端...';
         try {
-            // 使用 text/plain 繞過 CORS
             await fetch(MASTER_URL, {
                 method: 'POST',
                 body: JSON.stringify(this.expenses),
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' }
             });
-            status.textContent = '✅ 已成功同步到雲端';
-            // 同步成功後再次拉取，確保資料絕對一致
-            setTimeout(() => this.fetchCloud(), 1000);
-        } catch (e) {
-            status.textContent = '⚠️ 同步失敗，請檢查網路';
-        }
+            status.textContent = '✅ 已存入雲端';
+            localStorage.setItem('zm_data', JSON.stringify(this.expenses));
+        } catch (e) { alert('同步失敗'); }
     }
 
     render() {
         const list = document.getElementById('list');
-        const statsList = document.getElementById('statsList');
-        
-        // 渲染列表 (最新在最上面)
         list.innerHTML = this.expenses.slice().sort((a,b) => b.id - a.id).map(e => `
             <div class="record-item">
                 <div>
-                    <strong>${e.category}</strong> <small style="color:#666">(${e.person})</small><br>
+                    <strong>${e.category}</strong> <small>(${e.person})</small><br>
                     <span style="font-size:12px; color:#999;">${e.date} ${e.description}</span>
                 </div>
                 <div style="text-align:right">
-                    <span class="amt">$${Math.round(e.amount).toLocaleString()}</span><br>
-                    <button class="btn-del" onclick="app.delete('${e.id}')">刪除</button>
+                    <span class="amt">$${Math.round(e.amount).toLocaleString()}</span>
+                    <div class="actions">
+                        <button class="btn-edit" onclick="app.edit('${e.id}')">修改</button>
+                        <button class="btn-del" onclick="app.delete('${e.id}')">刪除</button>
+                    </div>
                 </div>
             </div>
-        `).join('') || '<p style="text-align:center; padding:20px; color:#999;">目前沒有帳務記錄</p>';
-
-        // 統計邏輯
-        const totals = {};
-        let grandTotal = 0;
-        this.expenses.forEach(e => {
-            totals[e.category] = (totals[e.category] || 0) + e.amount;
-            grandTotal += e.amount;
-        });
-
-        const sortedEntries = Object.entries(totals).sort((a,b) => b[1] - a[1]);
-        this.updateChart(sortedEntries);
-
-        // 渲染統計列表
-        statsList.innerHTML = sortedEntries.map(([name, val], index) => `
-            <div class="stats-row">
-                <span><i class="dot" style="background:${colorPalette[index % colorPalette.length]}"></i>${name}</span>
-                <span><strong>$${Math.round(val).toLocaleString()}</strong> <small style="color:#999">(${((val/grandTotal)*100).toFixed(1)}%)</small></span>
-            </div>
         `).join('');
+
+        this.updateCharts();
     }
 
-    updateChart(dataEntries) {
-        const ctx = document.getElementById('expenseChart').getContext('2d');
-        if (this.chart) this.chart.destroy();
-        if (dataEntries.length === 0) return;
-        this.chart = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: dataEntries.map(e => e[0]),
-                datasets: [{
-                    data: dataEntries.map(e => e[1]),
-                    backgroundColor: colorPalette.slice(0, dataEntries.length),
-                    borderWidth: 1
-                }]
-            },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                plugins: { legend: { display: false } } 
-            }
+    updateCharts() {
+        const users = ['ZIV', 'MIN'];
+        users.forEach(user => {
+            const userExps = this.expenses.filter(e => e.person === user);
+            const totals = {};
+            let sum = 0;
+            userExps.forEach(e => {
+                totals[e.category] = (totals[e.category] || 0) + e.amount;
+                sum += e.amount;
+            });
+            document.getElementById('total' + (user === 'ZIV' ? 'Ziv' : 'Min')).textContent = '總計: $' + Math.round(sum).toLocaleString();
+
+            const ctx = document.getElementById('chart' + (user === 'ZIV' ? 'Ziv' : 'Min')).getContext('2d');
+            if (this.charts[user]) this.charts[user].destroy();
+            
+            const entries = Object.entries(totals).sort((a,b) => b[1] - a[1]);
+            this.charts[user] = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: entries.map(e => e[0]),
+                    datasets: [{ data: entries.map(e => e[1]), backgroundColor: colorPalette }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
         });
     }
 }
