@@ -3,38 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Z&M 專屬雲端記帳本</title>
+    <title>Z&M 雲端記帳本</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* 保持原有的漂亮樣式 */
+        :root { --primary: #667eea; --bg-grad: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
+        /* MIN 模式的顏色變數 */
+        .theme-min { --primary: #ff4d4f; --bg-grad: linear-gradient(135deg, #fff1f0 0%, #ffccc7 100%); }
+        
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, sans-serif; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 100vh; padding: 20px; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg-grad); min-height: 100vh; padding: 20px; transition: 0.3s; }
         .container { max-width: 1200px; margin: 0 auto; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .btn-sync { background: #4CAF50; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .btn-sync:disabled { background: #999; }
+        
+        .header { background: var(--primary); color: white; padding: 25px; border-radius: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .btn-sync { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
+        
         .main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
         .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .chart-container { position: relative; height: 250px; width: 100%; }
+        
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; }
         .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
-        .btn-main { width: 100%; padding: 15px; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        
+        .btn-main { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        
         .record-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
-        .amt { font-weight: bold; }
-        .btn-del { color: #ff6b6b; background: none; border: none; cursor: pointer; font-size: 12px; }
-        @media (max-width: 768px) { .main-grid { grid-template-columns: 1fr; } .header { flex-direction: column; text-align: center; gap: 15px; } }
+        .amt { font-weight: bold; font-size: 18px; }
+        .btn-del { color: #999; background: none; border: none; cursor: pointer; font-size: 12px; }
+        
+        @media (max-width: 768px) { .main-grid { grid-template-columns: 1fr; } .header { flex-direction: column; gap: 15px; } }
     </style>
 </head>
-<body>
+<body id="bodyTag">
 
 <div class="container">
     <div class="header">
         <div>
-            <h1>💑 Z&M 2026 記帳本</h1>
-            <div id="status" style="font-size: 12px; margin-top: 5px; opacity: 0.8;">連線中...</div>
+            <h1 id="titleTxt">Z&M 雲端記帳本</h1>
+            <div id="status" style="font-size: 12px; margin-top: 5px; opacity: 0.9;">初始化中...</div>
         </div>
-        <button class="btn-sync" id="syncBtn">🔄 立即同步</button>
+        <button class="btn-sync" id="syncBtn">🔄 手動刷新</button>
     </div>
 
     <div class="main-grid">
@@ -45,26 +53,35 @@
                 <div id="statsList" style="margin-top: 15px;"></div>
             </div>
             <div class="card">
-                <h2>📝 歷史記錄</h2>
+                <h2>📝 最近記錄</h2>
                 <div id="list"></div>
             </div>
         </div>
 
         <div class="card" style="height: fit-content; position: sticky; top: 20px;">
             <h2>🧾 記一筆</h2>
-            <div class="form-group"><label>日期</label><input type="date" id="date"></div>
-            <div class="form-group"><label>記帳人</label><select id="person"><option value="ZIV">ZIV</option><option value="MIN">MIN</option></select></div>
+            <div class="form-group">
+                <label>日期</label>
+                <input type="date" id="date">
+            </div>
+            <div class="form-group">
+                <label>記帳人 (會自動記住你的選擇)</label>
+                <select id="person" onchange="app.handleUserChange(this.value)">
+                    <option value="ZIV">ZIV</option>
+                    <option value="MIN">MIN</option>
+                </select>
+            </div>
             <div class="form-group"><label>分類</label><select id="cat"></select></div>
             <div class="form-group"><label>金額</label><input type="number" id="amt" placeholder="0" inputmode="numeric"></div>
             <div class="form-group"><label>描述</label><input type="text" id="desc" placeholder="備註"></div>
-            <button class="btn-main" id="addBtn">儲存並同步</button>
+            <button class="btn-main" id="addBtn">儲存記錄</button>
         </div>
     </div>
 </div>
 
 <script>
 // --- 請在此處貼上你的 GAS 網址 ---
-const MASTER_URL = "https://script.google.com/macros/s/AKfycbyyr-CM-850Ykt0sTaCaSF-5lYPULMr1PiljNyyspQvg1cLbI1_ChvwUGEFYTJPkCs9/exec"; 
+const MASTER_URL = "在此貼上你的網址"; 
 // ------------------------------
 
 const categories = ['早餐', '中餐', '晚餐', '消夜', '飲料', '油錢', '停車', 'ETC', '車輛保養維修', '車輛保險稅金', '交通車票計程車', '房貸', '水費', '電費', '瓦斯費', '大樓管理費', '治裝', '教育', '娛樂', '家用修繕', '住家雜費', '食材費用', '零食餅乾', '住宿費', '醫療', '保險費', '家用網路', '手機費', '稅TAX'];
@@ -73,11 +90,17 @@ const colorPalette = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#F
 class App {
     constructor() {
         this.expenses = JSON.parse(localStorage.getItem('zm_data') || '[]');
+        this.currentUser = localStorage.getItem('zm_user') || 'ZIV';
         this.chart = null;
         this.init();
     }
 
-    async init() {
+    init() {
+        // 設定初始使用者介面
+        document.getElementById('person').value = this.currentUser;
+        this.applyUserTheme(this.currentUser);
+
+        // 初始化分類選單
         const catSelect = document.getElementById('cat');
         categories.forEach(c => {
             const opt = document.createElement('option');
@@ -86,12 +109,28 @@ class App {
         });
         document.getElementById('date').value = new Date().toISOString().split('T')[0];
 
-        // 綁定事件
         document.getElementById('addBtn').onclick = () => this.add();
-        document.getElementById('syncBtn').onclick = () => this.sync();
+        document.getElementById('syncBtn').onclick = () => this.fetchCloud();
 
-        // 啟動即自動抓取雲端資料
-        await this.fetchCloud();
+        this.fetchCloud();
+    }
+
+    handleUserChange(val) {
+        this.currentUser = val;
+        localStorage.setItem('zm_user', val);
+        this.applyUserTheme(val);
+    }
+
+    applyUserTheme(user) {
+        const body = document.getElementById('bodyTag');
+        const title = document.getElementById('titleTxt');
+        if (user === 'MIN') {
+            body.classList.add('theme-min');
+            title.textContent = 'MIN 雲端記帳本';
+        } else {
+            body.classList.remove('theme-min');
+            title.textContent = 'ZIV 雲端記帳本';
+        }
     }
 
     async fetchCloud() {
@@ -103,24 +142,24 @@ class App {
             if (Array.isArray(data)) {
                 this.expenses = data;
                 localStorage.setItem('zm_data', JSON.stringify(this.expenses));
-                status.textContent = '✅ 已連結雲端 (2026)';
+                status.textContent = '最後同步: ' + new Date().toLocaleTimeString();
             }
         } catch (e) {
-            status.textContent = '❌ 離線模式 (請檢查網路)';
+            status.textContent = '❌ 目前為離線模式';
         }
         this.render();
     }
 
     async add() {
-        const amt = document.getElementById('amt').value;
-        if (!amt) return alert('請輸入金額');
+        const amtValue = document.getElementById('amt').value;
+        if (!amtValue) return alert('請輸入金額');
         
         const item = {
             id: Date.now().toString(),
             date: document.getElementById('date').value,
             person: document.getElementById('person').value,
             category: document.getElementById('cat').value,
-            amount: parseFloat(amt),
+            amount: parseFloat(amtValue),
             description: document.getElementById('desc').value
         };
         
@@ -129,21 +168,19 @@ class App {
         document.getElementById('amt').value = '';
         document.getElementById('desc').value = '';
         
-        // 儲存後立即嘗試同步，不用手動按
         await this.sync();
     }
 
     async delete(id) {
-        if (!confirm('確定刪除？')) return;
+        if (!confirm('確定刪除此筆記錄？')) return;
         this.expenses = this.expenses.filter(e => e.id !== id);
         this.render();
         await this.sync();
     }
 
     async sync() {
-        const btn = document.getElementById('syncBtn');
-        btn.disabled = true;
-        btn.textContent = '同步中...';
+        const status = document.getElementById('status');
+        status.textContent = '📡 正在推送到雲端...';
         try {
             await fetch(MASTER_URL, {
                 method: 'POST',
@@ -151,13 +188,9 @@ class App {
                 body: JSON.stringify(this.expenses)
             });
             localStorage.setItem('zm_data', JSON.stringify(this.expenses));
-            document.getElementById('status').textContent = '最後更新: ' + new Date().toLocaleTimeString();
+            status.textContent = '✅ 已存入 2026 分頁';
         } catch (e) {
-            alert('同步失敗，請檢查網路');
-        } finally {
-            btn.disabled = false;
-            btn.textContent = '🔄 立即同步';
-            this.render();
+            alert('連線中斷，稍後自動重試');
         }
     }
 
@@ -168,7 +201,7 @@ class App {
         list.innerHTML = this.expenses.slice().reverse().map(e => `
             <div class="record-item">
                 <div>
-                    <strong>${e.category}</strong> <small>(${e.person})</small><br>
+                    <strong>${e.category}</strong> <small style="color:#666">${e.person}</small><br>
                     <span style="font-size:12px; color:#999;">${e.date} ${e.description}</span>
                 </div>
                 <div style="text-align:right">
@@ -176,7 +209,7 @@ class App {
                     <button class="btn-del" onclick="app.delete('${e.id}')">刪除</button>
                 </div>
             </div>
-        `).join('') || '<p style="text-align:center; color:#999; padding:20px;">尚無記錄</p>';
+        `).join('') || '<p style="text-align:center; padding:20px; color:#999;">目前尚無記錄</p>';
 
         const totals = {};
         let grandTotal = 0;
@@ -189,9 +222,9 @@ class App {
         this.updateChart(sortedEntries);
 
         statsList.innerHTML = sortedEntries.map(([name, val], index) => `
-            <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:14px; padding: 5px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:14px;">
                 <span><i style="display:inline-block; width:10px; height:10px; background:${colorPalette[index % colorPalette.length]}; border-radius:50%; margin-right:8px;"></i>${name}</span>
-                <span><strong>$${val.toLocaleString()}</strong> <small>(${((val/grandTotal)*100).toFixed(1)}%)</small></span>
+                <span><strong>$${val.toLocaleString()}</strong></span>
             </div>
         `).join('');
     }
