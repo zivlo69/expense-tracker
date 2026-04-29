@@ -272,10 +272,14 @@
             right: 0;
             bottom: 0;
             background: rgba(0, 0, 0, 0.5);
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
             z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
         }
 
         .modal-content {
@@ -346,7 +350,7 @@
                 <h1>💑 Z&M記帳本</h1>
             </div>
             <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 15px;">
-                <button class="settings-btn" onclick="app.toggleSettings()">⚙️ 設定</button>
+                <button class="settings-btn" id="settingsBtn">⚙️ 設定</button>
                 <div class="header-info">
                     <div class="header-date" id="headerDate"></div>
                     <div class="total-amount" id="totalAmount">NT$0</div>
@@ -438,7 +442,7 @@
                         <input type="text" id="description" placeholder="例: 便利商店早餐">
                     </div>
 
-                    <button class="btn-submit" onclick="app.addExpense()">➕ 記帳</button>
+                    <button class="btn-submit" id="submitBtn">➕ 記帳</button>
                 </div>
             </div>
         </div>
@@ -452,7 +456,7 @@
         </div>
 
         <!-- Settings Modal -->
-        <div id="settingsModal" class="modal" style="display: none;">
+        <div id="settingsModal" class="modal">
             <div class="modal-content">
                 <h2>⚙️ 設定</h2>
                 <div class="form-group">
@@ -461,8 +465,8 @@
                     <p style="font-size: 12px; color: #999; margin-top: 5px;">建立 Google Sheets 和 Apps Script 後，複製部署 URL</p>
                 </div>
                 <div class="modal-buttons">
-                    <button class="btn-primary" onclick="app.saveUrl()">保存</button>
-                    <button class="btn-secondary" onclick="app.toggleSettings()">取消</button>
+                    <button class="btn-primary" id="saveUrlBtn">保存</button>
+                    <button class="btn-secondary" id="cancelBtn">取消</button>
                 </div>
             </div>
         </div>
@@ -491,6 +495,18 @@
                 const today = new Date().toISOString().split('T')[0];
                 document.getElementById('date').value = today;
                 document.getElementById('urlInput').value = this.googleSheetUrl;
+                
+                // 綁定事件
+                document.getElementById('settingsBtn').addEventListener('click', () => this.toggleSettings());
+                document.getElementById('submitBtn').addEventListener('click', () => this.addExpense());
+                document.getElementById('saveUrlBtn').addEventListener('click', () => this.saveUrl());
+                document.getElementById('cancelBtn').addEventListener('click', () => this.toggleSettings());
+                document.getElementById('settingsModal').addEventListener('click', (e) => {
+                    if (e.target === document.getElementById('settingsModal')) {
+                        this.toggleSettings();
+                    }
+                });
+                
                 this.render();
             }
 
@@ -516,57 +532,50 @@
             }
 
             drawPieChart(categoryTotals) {
-    const container = document.getElementById('pieContainer');
-    if (categoryTotals.length === 0) {
-        container.innerHTML = '<p class="empty-message">還沒有本月記帳記錄</p>';
-        return;
-    }
+                const container = document.getElementById('pieContainer');
+                if (categoryTotals.length === 0) {
+                    container.innerHTML = '<p class="empty-message">還沒有本月記帳記錄</p>';
+                    return;
+                }
 
-    const chartHtml = `
-        <div style="display: flex; flex-direction: column; align-items: center; width: 100%; gap: 20px;">
-            <div style="position: relative;">
-                <canvas id="pieCanvas" width="300" height="300"></canvas>
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; width: 100%; max-width: 400px;">
-                ${categoryTotals.map(item => `
-                    <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: #f9f9f9; border-radius: 6px;">
-                        <div style="width: 12px; height: 12px; border-radius: 50%; background-color: ${item.color}; flex-shrink: 0;"></div>
-                        <div style="font-size: 12px; color: #666;">
-                            <div style="font-weight: 600; color: #333;">${item.name}</div>
-                            <div>NT$${item.value.toFixed(0)}</div>
+                const chartHtml = `
+                    <div style="display: flex; flex-direction: column; align-items: center; width: 100%; gap: 20px;">
+                        <div style="position: relative;">
+                            <canvas id="pieCanvas" width="300" height="300"></canvas>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; width: 100%; max-width: 400px;">
+                            ${categoryTotals.map(item => `
+                                <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: #f9f9f9; border-radius: 6px;">
+                                    <div style="width: 12px; height: 12px; border-radius: 50%; background-color: ${item.color}; flex-shrink: 0;"></div>
+                                    <div style="font-size: 12px; color: #666;">
+                                        <div style="font-weight: 600; color: #333;">${item.name}</div>
+                                        <div>NT$${item.value.toFixed(0)}</div>
+                                    </div>
+                                </div>
+                            `).join('')}
                         </div>
                     </div>
-                `).join('')}
-            </div>
-        </div>
-    `;
+                `;
 
-    container.innerHTML = chartHtml;
+                container.innerHTML = chartHtml;
 
-    // 畫圓餅圖
-    const canvas = document.getElementById('pieCanvas');
-    const ctx = canvas.getContext('2d');
-    const total = categoryTotals.reduce((sum, item) => sum + item.value, 0);
-    let startAngle = -Math.PI / 2;
+                const canvas = document.getElementById('pieCanvas');
+                const ctx = canvas.getContext('2d');
+                const total = categoryTotals.reduce((sum, item) => sum + item.value, 0);
+                let startAngle = -Math.PI / 2;
 
-    categoryTotals.forEach(item => {
-        const sliceAngle = (item.value / total) * Math.PI * 2;
-        ctx.fillStyle = item.color;
-        ctx.beginPath();
-        ctx.arc(150, 150, 100, startAngle, startAngle + sliceAngle);
-        ctx.lineTo(150, 150);
-        ctx.fill();
-        
-        // 邊框
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        
-        startAngle += sliceAngle;
-    });
-}
-                container.innerHTML = '';
-                container.appendChild(canvas);
+                categoryTotals.forEach(item => {
+                    const sliceAngle = (item.value / total) * Math.PI * 2;
+                    ctx.fillStyle = item.color;
+                    ctx.beginPath();
+                    ctx.arc(150, 150, 100, startAngle, startAngle + sliceAngle);
+                    ctx.lineTo(150, 150);
+                    ctx.fill();
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    startAngle += sliceAngle;
+                });
             }
 
             render() {
@@ -574,14 +583,11 @@
                 const categoryTotals = this.calculateCategoryTotals();
                 const totalExpense = categoryTotals.reduce((sum, item) => sum + item.value, 0);
 
-                // 更新 Header
                 document.getElementById('headerDate').textContent = this.getCurrentMonth();
                 document.getElementById('totalAmount').textContent = `NT$${totalExpense.toFixed(0)}`;
 
-                // 畫圓餅圖
                 this.drawPieChart(categoryTotals);
 
-                // 類別統計
                 const statsHtml = categoryTotals.length > 0 ? categoryTotals.map(item => `
                     <div class="category-item">
                         <div class="category-name">
@@ -597,7 +603,6 @@
 
                 document.getElementById('categoryStats').innerHTML = statsHtml;
 
-                // 記錄列表
                 const recordsHtml = monthlyExpenses.length > 0 ? [...monthlyExpenses].reverse().map(expense => `
                     <div class="record-item">
                         <div class="record-left">
@@ -633,12 +638,10 @@
                 this.expenses.push(expense);
                 localStorage.setItem('expenses', JSON.stringify(this.expenses));
 
-                // 發送到 Google Sheets
                 if (this.googleSheetUrl) {
                     this.sendToGoogleSheet(expense);
                 }
 
-                // 重置表單
                 document.getElementById('amount').value = '';
                 document.getElementById('description').value = '';
                 document.getElementById('date').value = new Date().toISOString().split('T')[0];
@@ -668,7 +671,7 @@
 
             toggleSettings() {
                 const modal = document.getElementById('settingsModal');
-                modal.style.display = modal.style.display === 'none' ? 'flex' : 'none';
+                modal.classList.toggle('active');
             }
 
             saveUrl() {
