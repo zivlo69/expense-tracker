@@ -516,30 +516,55 @@
             }
 
             drawPieChart(categoryTotals) {
-                const container = document.getElementById('pieContainer');
-                if (categoryTotals.length === 0) {
-                    container.innerHTML = '<p class="empty-message">還沒有本月記帳記錄</p>';
-                    return;
-                }
+    const container = document.getElementById('pieContainer');
+    if (categoryTotals.length === 0) {
+        container.innerHTML = '<p class="empty-message">還沒有本月記帳記錄</p>';
+        return;
+    }
 
-                const canvas = document.createElement('canvas');
-                canvas.width = 300;
-                canvas.height = 300;
-                const ctx = canvas.getContext('2d');
+    const chartHtml = `
+        <div style="display: flex; flex-direction: column; align-items: center; width: 100%; gap: 20px;">
+            <div style="position: relative;">
+                <canvas id="pieCanvas" width="300" height="300"></canvas>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; width: 100%; max-width: 400px;">
+                ${categoryTotals.map(item => `
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: #f9f9f9; border-radius: 6px;">
+                        <div style="width: 12px; height: 12px; border-radius: 50%; background-color: ${item.color}; flex-shrink: 0;"></div>
+                        <div style="font-size: 12px; color: #666;">
+                            <div style="font-weight: 600; color: #333;">${item.name}</div>
+                            <div>NT$${item.value.toFixed(0)}</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
 
-                const total = categoryTotals.reduce((sum, item) => sum + item.value, 0);
-                let startAngle = -Math.PI / 2;
+    container.innerHTML = chartHtml;
 
-                categoryTotals.forEach(item => {
-                    const sliceAngle = (item.value / total) * Math.PI * 2;
-                    ctx.fillStyle = item.color;
-                    ctx.beginPath();
-                    ctx.arc(150, 150, 100, startAngle, startAngle + sliceAngle);
-                    ctx.lineTo(150, 150);
-                    ctx.fill();
-                    startAngle += sliceAngle;
-                });
+    // 畫圓餅圖
+    const canvas = document.getElementById('pieCanvas');
+    const ctx = canvas.getContext('2d');
+    const total = categoryTotals.reduce((sum, item) => sum + item.value, 0);
+    let startAngle = -Math.PI / 2;
 
+    categoryTotals.forEach(item => {
+        const sliceAngle = (item.value / total) * Math.PI * 2;
+        ctx.fillStyle = item.color;
+        ctx.beginPath();
+        ctx.arc(150, 150, 100, startAngle, startAngle + sliceAngle);
+        ctx.lineTo(150, 150);
+        ctx.fill();
+        
+        // 邊框
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        startAngle += sliceAngle;
+    });
+}
                 container.innerHTML = '';
                 container.appendChild(canvas);
             }
