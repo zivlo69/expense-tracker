@@ -3,69 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Z&M 雲端記帳本 V3.1</title>
+    <title>Z&M 專屬雲端記帳本</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* 保持原有的漂亮樣式 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
+        body { font-family: -apple-system, sans-serif; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 100vh; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; }
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 25px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        }
-        .header h1 { font-size: 24px; }
-        .btn-group { display: flex; gap: 10px; }
-        .btn {
-            padding: 10px 15px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 14px;
-            transition: 0.2s;
-        }
-        .btn-settings { background: rgba(255,255,255,0.2); color: white; }
-        .btn-sync { background: #4CAF50; color: white; }
-        .btn-sync:disabled { background: #ccc; cursor: not-allowed; }
-        
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .btn-sync { background: #4CAF50; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn-sync:disabled { background: #999; }
         .main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
         .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .card h2 { font-size: 18px; margin-bottom: 15px; color: #333; border-left: 4px solid #667eea; padding-left: 10px; }
-        
-        /* 圖表容器 */
-        .chart-container { position: relative; height: 250px; width: 100%; margin-bottom: 20px; }
-        
+        .chart-container { position: relative; height: 250px; width: 100%; }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; outline: none; }
-        
+        .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
         .btn-main { width: 100%; padding: 15px; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        
         .record-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
-        .amt { font-weight: bold; color: #333; margin-right: 10px; }
+        .amt { font-weight: bold; }
         .btn-del { color: #ff6b6b; background: none; border: none; cursor: pointer; font-size: 12px; }
-        
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 100; }
-        .modal.active { display: flex; }
-        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; }
-        
-        @media (max-width: 768px) {
-            .main-grid { grid-template-columns: 1fr; }
-            .header { flex-direction: column; text-align: center; gap: 15px; }
-        }
-        .sync-info { font-size: 11px; margin-top: 5px; opacity: 0.8; }
+        @media (max-width: 768px) { .main-grid { grid-template-columns: 1fr; } .header { flex-direction: column; text-align: center; gap: 15px; } }
     </style>
 </head>
 <body>
@@ -73,26 +31,21 @@
 <div class="container">
     <div class="header">
         <div>
-            <h1>💑 Z&M 雲端記帳本 V3.1</h1>
-            <div id="syncStatus" class="sync-info">等待設定網址...</div>
+            <h1>💑 Z&M 2026 記帳本</h1>
+            <div id="status" style="font-size: 12px; margin-top: 5px; opacity: 0.8;">連線中...</div>
         </div>
-        <div class="btn-group">
-            <button class="btn btn-sync" id="syncBtn">🔄 同步雲端</button>
-            <button class="btn btn-settings" id="setBtn">⚙️ 設定</button>
-        </div>
+        <button class="btn-sync" id="syncBtn">🔄 立即同步</button>
     </div>
 
     <div class="main-grid">
         <div>
             <div class="card">
                 <h2>📊 支出比例圖</h2>
-                <div class="chart-container">
-                    <canvas id="expenseChart"></canvas>
-                </div>
+                <div class="chart-container"><canvas id="expenseChart"></canvas></div>
                 <div id="statsList" style="margin-top: 15px;"></div>
             </div>
             <div class="card">
-                <h2>📝 帳務記錄</h2>
+                <h2>📝 歷史記錄</h2>
                 <div id="list"></div>
             </div>
         </div>
@@ -104,36 +57,22 @@
             <div class="form-group"><label>分類</label><select id="cat"></select></div>
             <div class="form-group"><label>金額</label><input type="number" id="amt" placeholder="0" inputmode="numeric"></div>
             <div class="form-group"><label>描述</label><input type="text" id="desc" placeholder="備註"></div>
-            <button class="btn-main" id="addBtn">儲存記錄</button>
+            <button class="btn-main" id="addBtn">儲存並同步</button>
         </div>
-    </div>
-</div>
-
-<div id="modal" class="modal">
-    <div class="modal-content">
-        <h2>⚙️ 系統設定</h2>
-        <p style="font-size: 12px; color: #f44336; margin-bottom: 10px;">請確保 GAS 已發佈為「所有人」存取</p>
-        <div class="form-group">
-            <label>Google Script URL</label>
-            <input type="text" id="urlInput" placeholder="https://script.google.com/...">
-        </div>
-        <button class="btn-main" id="saveUrlBtn">儲存並同步</button>
-        <button class="btn" style="width:100%; margin-top:10px;" id="closeBtn">關閉</button>
     </div>
 </div>
 
 <script>
+// --- 請在此處貼上你的 GAS 網址 ---
+const MASTER_URL = "https://script.google.com/macros/s/AKfycbyyr-CM-850Ykt0sTaCaSF-5lYPULMr1PiljNyyspQvg1cLbI1_ChvwUGEFYTJPkCs9/exec"; 
+// ------------------------------
+
 const categories = ['早餐', '中餐', '晚餐', '消夜', '飲料', '油錢', '停車', 'ETC', '車輛保養維修', '車輛保險稅金', '交通車票計程車', '房貸', '水費', '電費', '瓦斯費', '大樓管理費', '治裝', '教育', '娛樂', '家用修繕', '住家雜費', '食材費用', '零食餅乾', '住宿費', '醫療', '保險費', '家用網路', '手機費', '稅TAX'];
-const colorPalette = [
-    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8bc34a', '#f44336', '#2196f3', '#ffeb3b',
-    '#9c27b0', '#00bcd4', '#e91e63', '#673ab7', '#3f51b5', '#03a9f4', '#009688', '#4caf50', '#cddc39', '#ffc107',
-    '#ff9800', '#ff5722', '#795548', '#9e9e9e', '#607d8b', '#333333', '#1a237e', '#b71c1c', '#1b5e20'
-];
+const colorPalette = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8bc34a', '#f44336', '#2196f3', '#ffeb3b', '#9c27b0', '#00bcd4', '#e91e63', '#673ab7', '#3f51b5', '#03a9f4', '#009688', '#4caf50', '#cddc39', '#ffc107', '#ff9800', '#ff5722', '#795548', '#9e9e9e', '#607d8b', '#333333', '#1a237e', '#b71c1c', '#1b5e20'];
 
 class App {
     constructor() {
         this.expenses = JSON.parse(localStorage.getItem('zm_data') || '[]');
-        this.url = localStorage.getItem('zm_url') || '';
         this.chart = null;
         this.init();
     }
@@ -147,48 +86,35 @@ class App {
         });
         document.getElementById('date').value = new Date().toISOString().split('T')[0];
 
+        // 綁定事件
         document.getElementById('addBtn').onclick = () => this.add();
         document.getElementById('syncBtn').onclick = () => this.sync();
-        document.getElementById('setBtn').onclick = () => document.getElementById('modal').classList.add('active');
-        document.getElementById('closeBtn').onclick = () => document.getElementById('modal').classList.remove('active');
-        document.getElementById('saveUrlBtn').onclick = () => {
-            this.url = document.getElementById('urlInput').value.trim();
-            localStorage.setItem('zm_url', this.url);
-            document.getElementById('modal').classList.remove('active');
-            this.fetchCloud();
-        };
 
-        if (this.url) {
-            await this.fetchCloud();
-        } else {
-            document.getElementById('syncStatus').textContent = '請先點擊設定網址';
-        }
-        this.render();
+        // 啟動即自動抓取雲端資料
+        await this.fetchCloud();
     }
 
     async fetchCloud() {
-        if (!this.url) return;
-        const status = document.getElementById('syncStatus');
-        status.textContent = '雲端同步中...';
+        const status = document.getElementById('status');
+        status.textContent = '☁️ 雲端同步中...';
         try {
-            const res = await fetch(this.url);
-            if (!res.ok) throw new Error();
+            const res = await fetch(MASTER_URL);
             const data = await res.json();
             if (Array.isArray(data)) {
                 this.expenses = data;
-                this.saveLocal();
-                status.textContent = '最後更新: ' + new Date().toLocaleTimeString();
+                localStorage.setItem('zm_data', JSON.stringify(this.expenses));
+                status.textContent = '✅ 已連結雲端 (2026)';
             }
         } catch (e) {
-            status.textContent = '連線失敗 (請檢查網址或權限)';
+            status.textContent = '❌ 離線模式 (請檢查網路)';
         }
         this.render();
     }
 
-    add() {
-        const amtInput = document.getElementById('amt');
-        const amt = amtInput.value;
+    async add() {
+        const amt = document.getElementById('amt').value;
         if (!amt) return alert('請輸入金額');
+        
         const item = {
             id: Date.now().toString(),
             date: document.getElementById('date').value,
@@ -197,43 +123,42 @@ class App {
             amount: parseFloat(amt),
             description: document.getElementById('desc').value
         };
+        
         this.expenses.push(item);
-        this.saveLocal();
         this.render();
-        amtInput.value = '';
+        document.getElementById('amt').value = '';
         document.getElementById('desc').value = '';
+        
+        // 儲存後立即嘗試同步，不用手動按
+        await this.sync();
     }
 
-    delete(id) {
-        if (!confirm('刪除本地記錄？(需同步才會更新雲端)')) return;
+    async delete(id) {
+        if (!confirm('確定刪除？')) return;
         this.expenses = this.expenses.filter(e => e.id !== id);
-        this.saveLocal();
         this.render();
+        await this.sync();
     }
 
     async sync() {
-        if (!this.url) return alert('請先設定 URL');
         const btn = document.getElementById('syncBtn');
         btn.disabled = true;
-        btn.textContent = '傳送中...';
+        btn.textContent = '同步中...';
         try {
-            await fetch(this.url, {
+            await fetch(MASTER_URL, {
                 method: 'POST',
                 mode: 'no-cors',
                 body: JSON.stringify(this.expenses)
             });
-            alert('同步成功！(雲端資料已重寫)');
-            await this.fetchCloud();
+            localStorage.setItem('zm_data', JSON.stringify(this.expenses));
+            document.getElementById('status').textContent = '最後更新: ' + new Date().toLocaleTimeString();
         } catch (e) {
-            alert('同步發生錯誤');
+            alert('同步失敗，請檢查網路');
         } finally {
             btn.disabled = false;
-            btn.textContent = '🔄 同步雲端';
+            btn.textContent = '🔄 立即同步';
+            this.render();
         }
-    }
-
-    saveLocal() {
-        localStorage.setItem('zm_data', JSON.stringify(this.expenses));
     }
 
     render() {
@@ -242,16 +167,16 @@ class App {
         
         list.innerHTML = this.expenses.slice().reverse().map(e => `
             <div class="record-item">
-                <div class="record-info">
+                <div>
                     <strong>${e.category}</strong> <small>(${e.person})</small><br>
                     <span style="font-size:12px; color:#999;">${e.date} ${e.description}</span>
                 </div>
-                <div>
-                    <span class="amt">$${e.amount.toLocaleString()}</span>
+                <div style="text-align:right">
+                    <span class="amt">$${e.amount.toLocaleString()}</span><br>
                     <button class="btn-del" onclick="app.delete('${e.id}')">刪除</button>
                 </div>
             </div>
-        `).join('') || '<p style="text-align:center; color:#999; padding:10px;">尚無記錄</p>';
+        `).join('') || '<p style="text-align:center; color:#999; padding:20px;">尚無記錄</p>';
 
         const totals = {};
         let grandTotal = 0;
@@ -264,7 +189,7 @@ class App {
         this.updateChart(sortedEntries);
 
         statsList.innerHTML = sortedEntries.map(([name, val], index) => `
-            <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:14px; padding: 5px; border-radius: 4px; background: ${index % 2 === 0 ? '#f9f9f9' : '#fff'};">
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:14px; padding: 5px;">
                 <span><i style="display:inline-block; width:10px; height:10px; background:${colorPalette[index % colorPalette.length]}; border-radius:50%; margin-right:8px;"></i>${name}</span>
                 <span><strong>$${val.toLocaleString()}</strong> <small>(${((val/grandTotal)*100).toFixed(1)}%)</small></span>
             </div>
@@ -272,29 +197,20 @@ class App {
     }
 
     updateChart(dataEntries) {
-        const canvas = document.getElementById('expenseChart');
-        const ctx = canvas.getContext('2d');
-        const labels = dataEntries.map(e => e[0]);
-        const values = dataEntries.map(e => e[1]);
-        
+        const ctx = document.getElementById('expenseChart').getContext('2d');
         if (this.chart) this.chart.destroy();
-        if (values.length === 0) return;
-
+        if (dataEntries.length === 0) return;
         this.chart = new Chart(ctx, {
             type: 'pie',
             data: {
-                labels: labels,
+                labels: dataEntries.map(e => e[0]),
                 datasets: [{
-                    data: values,
-                    backgroundColor: colorPalette.slice(0, labels.length),
+                    data: dataEntries.map(e => e[1]),
+                    backgroundColor: colorPalette.slice(0, dataEntries.length),
                     borderWidth: 1
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } }
-            }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
         });
     }
 }
