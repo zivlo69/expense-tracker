@@ -3,32 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Z&M 2026 雲端帳簿</title>
+    <title>Z&M 2026 雲端家計簿</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --primary: #667eea; --bg-grad: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
         .theme-min { --primary: #ff4d4f; --bg-grad: linear-gradient(135deg, #fff1f0 0%, #ffccc7 100%); }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; background: var(--bg-grad); min-height: 100vh; padding: 10px; transition: 0.3s; }
+        body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; background: var(--bg-grad); min-height: 100vh; padding: 10px; }
         .container { max-width: 800px; margin: 0 auto; }
-        .header { background: var(--primary); color: white; padding: 15px; border-radius: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .header { background: var(--primary); color: white; padding: 15px; border-radius: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .btn-sync { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; }
-        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 10px; }
-        .chart-box { text-align: center; }
-        .chart-container { position: relative; height: 160px; width: 100%; margin: 5px 0; }
+        .chart-main { height: 260px; width: 100%; position: relative; margin: 10px 0; }
+        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .chart-sub { height: 140px; position: relative; }
         .form-group { margin-bottom: 10px; }
         .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; }
         .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; outline: none; background: #fff; }
-        
-        .edit-active { border: 2px solid #ff9800 !important; background: #fffdf0 !important; }
-        .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-main:disabled { background: #ccc; cursor: not-allowed; }
         .btn-cancel { width: 100%; padding: 10px; background: #999; color: white; border: none; border-radius: 10px; margin-top: 8px; cursor: pointer; display: none; }
-        
         .record-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 5px; border-bottom: 1px solid #eee; }
         .amt { font-weight: 800; font-size: 18px; color: #333; }
-        .btn-edit { color: #4466ee; background: #eef2ff; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; }
-        
+        .btn-edit { color: #4466ee; background: #eef2ff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; }
         @media (max-width: 500px) { .charts-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -37,23 +34,21 @@
 <div class="container">
     <div class="header">
         <div>
-            <h1 id="titleTxt" style="font-size: 18px;">Z&M 雲端系統</h1>
+            <h1 id="titleTxt" style="font-size: 18px;">Z&M 2026</h1>
             <div id="status" style="font-size: 11px; margin-top: 2px; opacity: 0.9;">連線正常</div>
         </div>
         <button class="btn-sync" onclick="app.fetchCloud(true)">🔄 強制刷新</button>
     </div>
 
+    <div class="card" style="text-align: center;">
+        <h3 style="font-size: 15px; color: #333;">🏠 家庭總支出分類</h3>
+        <div class="chart-main"><canvas id="chartTotal"></canvas></div>
+        <div id="grandTotal" style="font-size: 18px; font-weight: 900; color: #444;">$0</div>
+    </div>
+
     <div class="charts-grid">
-        <div class="card chart-box">
-            <h4 style="font-size:13px;">ZIV 支出</h4>
-            <div class="chart-container"><canvas id="chartZiv"></canvas></div>
-            <div id="totalZiv" style="font-weight:bold; color:#667eea; font-size:14px;">$0</div>
-        </div>
-        <div class="card chart-box">
-            <h4 style="font-size:13px;">MIN 支出</h4>
-            <div class="chart-container"><canvas id="chartMin"></canvas></div>
-            <div id="totalMin" style="font-weight:bold; color:#ff4d4f; font-size:14px;">$0</div>
-        </div>
+        <div class="card" style="text-align: center;"><h4 style="font-size: 12px;">🤴 ZIV</h4><div class="chart-sub"><canvas id="chartZiv"></canvas></div></div>
+        <div class="card" style="text-align: center;"><h4 style="font-size: 12px;">👸 MIN</h4><div class="chart-sub"><canvas id="chartMin"></canvas></div></div>
     </div>
 
     <div class="card" id="formCard">
@@ -66,7 +61,7 @@
             </select>
         </div>
         <div class="form-group"><label>分類</label><select id="cat"></select></div>
-        <div class="form-group"><label>金額</label><input type="number" id="amt" placeholder="0" inputmode="numeric"></div>
+        <div class="form-group"><label>金額</label><input type="number" id="amt" placeholder="請輸入金額" inputmode="numeric"></div>
         <div class="form-group"><label>描述</label><input type="text" id="desc" placeholder="選填備註"></div>
         <button class="btn-main" id="addBtn">儲存記錄</button>
         <button class="btn-cancel" id="cancelBtn" onclick="app.resetForm()">取消修改</button>
@@ -88,7 +83,7 @@ class App {
     constructor() {
         this.expenses = [];
         this.currentUser = localStorage.getItem('zm_user') || 'ZIV';
-        this.charts = { ZIV: null, MIN: null };
+        this.charts = { Total: null, ZIV: null, MIN: null };
         this.init();
     }
 
@@ -127,16 +122,24 @@ class App {
                 this.expenses = data;
                 status.textContent = '最後更新: ' + new Date().toLocaleTimeString();
                 this.render();
-                if(isManual) alert('已重新抓取雲端資料！');
+                if(isManual) alert('資料已同步！');
             }
         } catch (e) { status.textContent = '❌ 連線異常'; }
     }
 
     async handleSave() {
-        const amtVal = document.getElementById('amt').value;
-        if (!amtVal) return alert('請輸入金額');
+        const amtInput = document.getElementById('amt');
+        const addBtn = document.getElementById('addBtn');
+        const amtVal = amtInput.value;
         
+        if (!amtVal || amtVal <= 0) return alert('請輸入有效金額');
+        
+        // 鎖定按鈕，防止連點
+        addBtn.disabled = true;
+        addBtn.textContent = "傳送中...";
+
         try {
+            // 儲存前刷一下雲端資料
             const res = await fetch(MASTER_URL);
             const cloudData = await res.json();
             if (Array.isArray(cloudData)) this.expenses = cloudData;
@@ -160,36 +163,8 @@ class App {
         }
         
         await this.pushToCloud();
-        this.resetForm();
-    }
-
-    edit(id) {
-        const item = this.expenses.find(e => String(e.id) === String(id));
-        if (!item) return alert('請先點擊刷新抓取最新資料');
-        
-        document.getElementById('editId').value = item.id;
-        document.getElementById('date').value = item.date;
-        document.getElementById('person').value = item.person;
-        document.getElementById('cat').value = item.category;
-        document.getElementById('amt').value = item.amount;
-        document.getElementById('desc').value = item.description;
-        
-        document.getElementById('formTitle').textContent = "✏️ 修改模式";
-        document.getElementById('addBtn').textContent = "更新記錄";
-        document.getElementById('cancelBtn').style.display = "block";
-        document.querySelectorAll('#formCard input, #formCard select').forEach(el => el.classList.add('edit-active'));
-        
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    resetForm() {
-        document.getElementById('editId').value = "";
-        document.getElementById('amt').value = "";
-        document.getElementById('desc').value = "";
-        document.getElementById('formTitle').textContent = "🧾 記帳 / 修改";
-        document.getElementById('addBtn').textContent = "儲存記錄";
-        document.getElementById('cancelBtn').style.display = "none";
-        document.querySelectorAll('.edit-active').forEach(el => el.classList.remove('edit-active'));
+        this.resetForm(); // 這邊會清空欄位
+        addBtn.disabled = false;
     }
 
     async pushToCloud() {
@@ -199,9 +174,34 @@ class App {
                 body: JSON.stringify(this.expenses),
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' }
             });
-            document.getElementById('status').textContent = '✅ 雲端已更新';
+            document.getElementById('status').textContent = '✅ 已更新雲端';
             this.render();
         } catch (e) { alert('同步失敗'); }
+    }
+
+    edit(id) {
+        const item = this.expenses.find(e => String(e.id) === String(id));
+        if (!item) return;
+        document.getElementById('editId').value = item.id;
+        document.getElementById('date').value = item.date;
+        document.getElementById('person').value = item.person;
+        document.getElementById('cat').value = item.category;
+        document.getElementById('amt').value = item.amount;
+        document.getElementById('desc').value = item.description;
+        document.getElementById('formTitle').textContent = "✏️ 修改模式";
+        document.getElementById('addBtn').textContent = "更新記錄";
+        document.getElementById('cancelBtn').style.display = "block";
+        window.scrollTo({ top: document.getElementById('formCard').offsetTop - 20, behavior: 'smooth' });
+    }
+
+    resetForm() {
+        document.getElementById('editId').value = "";
+        document.getElementById('amt').value = ""; // 清空金額格子
+        document.getElementById('desc').value = ""; // 清空描述格子
+        document.getElementById('formTitle').textContent = "🧾 記帳 / 修改";
+        document.getElementById('addBtn').textContent = "儲存記錄";
+        document.getElementById('cancelBtn').style.display = "none";
+        // 日期保留今天，不需清空
     }
 
     render() {
@@ -210,39 +210,48 @@ class App {
             <div class="record-item">
                 <div style="flex:1;">
                     <div style="font-weight:bold;">${e.category} <small>(${e.person})</small></div>
-                    <div style="font-size:12px; color:#999;">${e.date} ${e.description}</div>
+                    <div style="font-size:12px; color:#666;">${e.date} ${e.description}</div>
                 </div>
                 <div style="text-align:right;">
                     <div class="amt">$${Math.round(e.amount).toLocaleString()}</div>
                     <button class="btn-edit" onclick="app.edit('${e.id}')">修改</button>
                 </div>
             </div>
-        `).join('') || '<p style="text-align:center; color:#999; padding:20px;">尚無記錄</p>';
+        `).join('') || '<p style="text-align:center; padding:20px; color:#999;">目前無紀錄</p>';
         this.updateCharts();
     }
 
     updateCharts() {
+        const totalMap = {}; let grandTotal = 0;
+        this.expenses.forEach(e => {
+            totalMap[e.category] = (totalMap[e.category] || 0) + e.amount;
+            grandTotal += e.amount;
+        });
+        document.getElementById('grandTotal').textContent = '家庭總支出: $' + Math.round(grandTotal).toLocaleString();
+        this.drawPie('Total', totalMap, true);
         ['ZIV', 'MIN'].forEach(user => {
-            const userExps = this.expenses.filter(e => e.person === user);
-            const totals = {};
-            let sum = 0;
-            userExps.forEach(e => {
-                totals[e.category] = (totals[e.category] || 0) + e.amount;
-                sum += e.amount;
+            const userMap = {};
+            this.expenses.filter(e => e.person === user).forEach(e => {
+                userMap[e.category] = (userMap[e.category] || 0) + e.amount;
             });
-            document.getElementById('total' + (user === 'ZIV' ? 'Ziv' : 'Min')).textContent = '總計: $' + Math.round(sum).toLocaleString();
-            const canvasId = 'chart' + (user === 'ZIV' ? 'Ziv' : 'Min');
-            const ctx = document.getElementById(canvasId).getContext('2d');
-            if (this.charts[user]) this.charts[user].destroy();
-            const entries = Object.entries(totals).sort((a,b) => b[1] - a[1]);
-            this.charts[user] = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: entries.map(e => e[0]),
-                    datasets: [{ data: entries.map(e => e[1]), backgroundColor: colorPalette }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-            });
+            this.drawPie(user, userMap, false);
+        });
+    }
+
+    drawPie(type, dataMap, showLegend) {
+        const ctx = document.getElementById('chart' + type).getContext('2d');
+        if (this.charts[type]) this.charts[type].destroy();
+        const entries = Object.entries(dataMap).sort((a,b) => b[1] - a[1]);
+        this.charts[type] = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: entries.map(e => e[0]),
+                datasets: [{ data: entries.map(e => e[1]), backgroundColor: colorPalette }]
+            },
+            options: { 
+                responsive: true, maintainAspectRatio: false, 
+                plugins: { legend: { display: showLegend, position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } }
+            }
         });
     }
 }
