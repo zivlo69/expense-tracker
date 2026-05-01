@@ -11,14 +11,15 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; background: var(--bg-grad); min-height: 100vh; padding: 10px; }
         .container { max-width: 800px; margin: 0 auto; }
-        .header { background: var(--primary); color: white; padding: 15px; border-radius: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .btn-sync { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+        .header { background: var(--primary); color: white; padding: 15px; border-radius: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .header-left { display: flex; flex-direction: column; }
+        .header-right { display: flex; gap: 5px; }
+        .btn-sync, .btn-logout { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+        .btn-logout:hover, .btn-sync:hover { background: rgba(255,255,255,0.3); }
         .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 10px; }
         
-        /* 家庭總支出圓餅圖高度 */
         .chart-main { height: 260px; width: 100%; position: relative; margin: 10px 0; }
         
-        /* 個人總額卡片 */
         .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .summary-card { background: white; padding: 12px; border-radius: 12px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-top: 4px solid var(--primary); }
         .summary-val { font-size: 18px; font-weight: 900; margin-top: 5px; }
@@ -31,23 +32,71 @@
         .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; }
         .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; outline: none; background: #fff; }
         .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; }
-        .btn-main:disabled { background: #ccc; }
-        .btn-cancel { width: 100%; padding: 10px; background: #999; color: white; border: none; border-radius: 10px; margin-top: 8px; display: none; }
+        .btn-main:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-cancel { width: 100%; padding: 10px; background: #999; color: white; border: none; border-radius: 10px; margin-top: 8px; display: none; cursor: pointer; }
         
         .record-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 5px; border-bottom: 1px solid #eee; }
-        .amt { font-weight: 800; font-size: 16px; color: #333; }
-        .btn-edit { color: #4466ee; background: #eef2ff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; }
+        .record-info { flex: 1; }
+        .record-category { font-weight: bold; font-size: 14px; }
+        .record-person { color: #999; font-weight: normal; font-size: 12px; margin-left: 5px; }
+        .record-desc { font-size: 11px; color: #888; margin-top: 3px; }
+        .amt { font-weight: 800; font-size: 16px; color: #333; margin-right: 10px; }
+        .btn-edit { color: #4466ee; background: #eef2ff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+        /* 登入畫面 */
+        #loginScreen { 
+            position: fixed; inset: 0; background: var(--bg-grad);
+            display: flex; align-items: center; justify-content: center; z-index: 999;
+        }
+        .login-box {
+            background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 320px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2); text-align: center;
+        }
+        .login-icon { font-size: 50px; margin-bottom: 15px; }
+        .login-title { font-size: 24px; font-weight: bold; margin-bottom: 10px; color: #333; }
+        .login-subtitle { font-size: 12px; color: #999; margin-bottom: 20px; }
+        #pwInput { 
+            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; 
+            font-size: 16px; margin-bottom: 15px;
+        }
+        .btn-login { 
+            width: 100%; padding: 14px; background: #667eea; color: white; 
+            border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer;
+        }
+        .btn-login:disabled { background: #ccc; cursor: not-allowed; }
+        .login-error { color: #ff4d4f; font-size: 12px; margin-top: 10px; display: none; }
+
+        /* 筆數選擇器 */
+        .record-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 10px; }
+        .record-count-label { font-size: 12px; color: #666; }
+        .record-count-select { padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 12px; }
     </style>
 </head>
 <body id="bodyTag">
 
-<div class="container">
+<!-- 登入畫面 -->
+<div id="loginScreen">
+    <div class="login-box">
+        <div class="login-icon">🔐</div>
+        <div class="login-title">Z&M 家計簿</div>
+        <div class="login-subtitle">輸入密碼以繼續</div>
+        <input type="password" id="pwInput" placeholder="請輸入密碼" onkeypress="if(event.key==='Enter') app.login();">
+        <button class="btn-login" onclick="app.login()" id="loginBtn">登入</button>
+        <div class="login-error" id="loginError"></div>
+    </div>
+</div>
+
+<!-- 主應用 -->
+<div class="container" id="mainApp" style="display: none;">
     <div class="header">
-        <div>
-            <h1 id="titleTxt" style="font-size: 18px;">Z&M 2026</h1>
+        <div class="header-left">
+            <h1 id="titleTxt" style="font-size: 18px;">Z&M 專屬記帳</h1>
             <div id="status" style="font-size: 11px; opacity: 0.9;">本月統計模式</div>
         </div>
-        <button class="btn-sync" onclick="app.fetchCloud(true)">🔄 強制刷新</button>
+        <div class="header-right">
+            <button class="btn-sync" onclick="app.fetchCloud(true)" title="強制刷新資料">🔄 刷新</button>
+            <button class="btn-logout" onclick="app.logout()" title="登出並重新輸入密碼">🚪 登出</button>
+        </div>
     </div>
 
     <div class="card" style="text-align: center;">
@@ -78,48 +127,148 @@
             </select>
         </div>
         <div class="form-group"><label>分類</label><select id="cat"></select></div>
-        <div class="form-group"><label>金額</label><input type="number" id="amt" placeholder="0" inputmode="numeric"></div>
-        <div class="form-group"><label>描述</label><input type="text" id="desc" placeholder="備註內容"></div>
+        <div class="form-group"><label>金額</label><input type="number" id="amt" placeholder="0" inputmode="numeric" min="0" max="999999"></div>
+        <div class="form-group"><label>描述</label><input type="text" id="desc" placeholder="備註內容" maxlength="50"></div>
         <button class="btn-main" id="addBtn">儲存記錄</button>
         <button class="btn-cancel" id="cancelBtn" onclick="app.resetForm()">取消修改</button>
     </div>
 
     <div class="card">
-        <h3 style="margin-bottom:10px; font-size:16px;">📝 最近記錄 (近30筆)</h3>
+        <h3 style="margin-bottom:10px; font-size:16px;">📝 最近記錄</h3>
+        <div class="record-controls">
+            <span class="record-count-label">顯示筆數：</span>
+            <select class="record-count-select" id="recordCountSelect" onchange="app.updateRecordDisplay()">
+                <option value="20">20筆</option>
+                <option value="40" selected>40筆</option>
+                <option value="60">60筆</option>
+                <option value="80">80筆</option>
+                <option value="100">100筆</option>
+            </select>
+        </div>
         <div id="list"></div>
     </div>
 </div>
 
 <script>
-const MASTER_URL = "https://script.google.com/macros/s/AKfycbyyr-CM-850Ykt0sTaCaSF-5lYPULMr1PiljNyyspQvg1cLbI1_ChvwUGEFYTJPkCs9/exec"; 
+const MASTER_URL = "https://script.google.com/macros/s/AKfycbyyr-CM-850Ykt0sTaCaSF-5lYPULMr1PiljNyyspQvg1cLbI1_ChvwUGEFYTJPkCs9/exec"; // 部署後替換這個URL
 
 const categories = ['早餐', '中餐', '晚餐', '消夜', '飲料', '油錢', '停車', 'ETC', '車輛保養維修', '車輛保險稅金', '交通車票計程車', '房貸', '水費', '電費', '瓦斯費', '大樓管理費', '治裝', '教育', '娛樂', '家用修繕', '住家雜費', '食材費用', '零食餅乾', '住宿費', '醫療', '保險費', '家用網路', '手機費', '稅TAX'];
 const colorPalette = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8bc34a', '#f44336', '#2196f3', '#ffeb3b', '#9c27b0', '#00bcd4', '#e91e63', '#673ab7', '#3f51b5', '#03a9f4', '#009688', '#4caf50', '#cddc39', '#ffc107', '#ff9800', '#ff5722', '#795548', '#9e9e9e', '#607d8b', '#333333', '#1a237e', '#b71c1c', '#1b5e20'];
+
+// HTML 工具函數 - 防止 XSS
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 
 class App {
     constructor() {
         this.expenses = [];
         this.currentUser = localStorage.getItem('zm_user') || 'ZIV';
+        this.token = localStorage.getItem('zm_token');
         this.chartTotal = null;
+        this.recordDisplayCount = parseInt(localStorage.getItem('zm_record_count') || '40');
         this.init();
     }
 
     async init() {
-        document.getElementById('person').value = this.currentUser;
-        this.applyUserTheme(this.currentUser);
         const catSelect = document.getElementById('cat');
         categories.forEach(c => {
             const opt = document.createElement('option');
-            opt.value = c; opt.textContent = c;
+            opt.value = c;
+            opt.textContent = c;
             catSelect.appendChild(opt);
         });
-        document.getElementById('date').value = new Date().toISOString().split('T')[0];
-        document.getElementById('addBtn').onclick = () => this.handleSave();
         
+        // 設定今天日期
+        document.getElementById('date').value = this.getLocalDate();
+        document.getElementById('addBtn').onclick = () => this.handleSave();
+        document.getElementById('recordCountSelect').value = this.recordDisplayCount;
+        
+        // 設定月份標題
         const now = new Date();
         document.getElementById('monthTitle').textContent = `🏠 家庭 ${now.getMonth()+1}月 支出分類`;
         
-        await this.fetchCloud();
+        // 檢查是否已認證
+        if (this.token) {
+            this.showMainApp();
+            await this.fetchCloud();
+        } else {
+            this.showLoginScreen();
+        }
+    }
+
+    // 取得本地時間的日期字串（修復時區問題）
+    getLocalDate() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    showLoginScreen() {
+        document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('mainApp').style.display = 'none';
+        document.getElementById('pwInput').focus();
+    }
+
+    showMainApp() {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        document.getElementById('person').value = this.currentUser;
+        this.applyUserTheme(this.currentUser);
+    }
+
+    async login() {
+        const password = document.getElementById('pwInput').value;
+        const loginBtn = document.getElementById('loginBtn');
+        const loginError = document.getElementById('loginError');
+        
+        if (!password) {
+            loginError.textContent = '請輸入密碼';
+            loginError.style.display = 'block';
+            return;
+        }
+
+        loginBtn.disabled = true;
+        loginBtn.textContent = '驗證中...';
+        loginError.style.display = 'none';
+
+        try {
+            const res = await fetch(MASTER_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'login', password }),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            });
+            const data = await res.json();
+
+            if (data.token) {
+                this.token = data.token;
+                localStorage.setItem('zm_token', this.token);
+                this.showMainApp();
+                await this.fetchCloud();
+            } else {
+                loginError.textContent = '❌ 密碼錯誤，請重試';
+                loginError.style.display = 'block';
+            }
+        } catch (e) {
+            loginError.textContent = '❌ 連線失敗，請檢查網路';
+            loginError.style.display = 'block';
+        }
+
+        loginBtn.disabled = false;
+        loginBtn.textContent = '登入';
+    }
+
+    logout() {
+        if (confirm('確定要登出嗎？')) {
+            localStorage.removeItem('zm_token');
+            this.token = null;
+            document.getElementById('pwInput').value = '';
+            this.showLoginScreen();
+        }
     }
 
     handleUserChange(val) {
@@ -136,57 +285,96 @@ class App {
     async fetchCloud(isManual = false) {
         const status = document.getElementById('status');
         status.textContent = '☁️ 同步中...';
+        
         try {
-            const res = await fetch(MASTER_URL);
+            const res = await fetch(MASTER_URL + '?token=' + this.token);
             const data = await res.json();
+
+            if (data.error === 'unauthorized') {
+                localStorage.removeItem('zm_token');
+                this.token = null;
+                this.showLoginScreen();
+                return;
+            }
+
             if (Array.isArray(data)) {
                 this.expenses = data;
                 status.textContent = '最後更新: ' + new Date().toLocaleTimeString();
                 this.render();
-                if(isManual) alert('已更新本月最新數據！');
+                if (isManual) alert('✅ 已更新本月最新數據！');
             }
-        } catch (e) { status.textContent = '❌ 連線逾時'; }
+        } catch (e) {
+            status.textContent = '❌ 連線逾時';
+            console.error(e);
+        }
     }
 
     async handleSave() {
         const addBtn = document.getElementById('addBtn');
-        const amt = document.getElementById('amt').value;
-        if (!amt || amt <= 0) return alert('請輸入金額');
+        const amt = parseFloat(document.getElementById('amt').value);
+        
+        if (!amt || amt <= 0) {
+            alert('請輸入有效的金額（大於0）');
+            return;
+        }
+
+        if (amt > 999999) {
+            alert('金額過大，請檢查');
+            return;
+        }
 
         addBtn.disabled = true;
-        addBtn.textContent = "傳送中...";
+        addBtn.textContent = '傳送中...';
 
         const editId = document.getElementById('editId').value;
         const newItem = {
-            id: editId || Date.now().toString(),
+            id: editId || this.generateUniqueId(),
             date: document.getElementById('date').value,
             person: document.getElementById('person').value,
             category: document.getElementById('cat').value,
-            amount: parseFloat(amt),
-            description: document.getElementById('desc').value || ""
+            amount: amt,
+            description: document.getElementById('desc').value || ''
         };
 
+        // 修改或新增
         if (editId) {
             const idx = this.expenses.findIndex(e => String(e.id) === String(editId));
-            if (idx !== -1) this.expenses[idx] = newItem;
+            if (idx !== -1) {
+                this.expenses[idx] = newItem;
+            }
         } else {
             this.expenses.push(newItem);
         }
-        
+
         await this.pushToCloud();
         this.resetForm();
         addBtn.disabled = false;
-        addBtn.textContent = "儲存記錄";
+        addBtn.textContent = '儲存記錄';
+    }
+
+    // 生成唯一 ID（使用 crypto.randomUUID 防止碰撞）
+    generateUniqueId() {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+        // 備選方案：毫秒時間戳 + 隨機數
+        return Date.now().toString(36) + Math.random().toString(36).substr(2);
     }
 
     async pushToCloud() {
         try {
-            await fetch(MASTER_URL, {
+            const res = await fetch(MASTER_URL, {
                 method: 'POST',
-                body: JSON.stringify(this.expenses),
+                body: JSON.stringify({ token: this.token, expenses: this.expenses }),
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' }
             });
-            document.getElementById('status').textContent = '✅ 已存入雲端';
+            const data = await res.json();
+
+            if (data.success) {
+                document.getElementById('status').textContent = '✅ 已存入雲端';
+            } else {
+                document.getElementById('status').textContent = '⚠️ 請手動刷新';
+            }
             this.render();
         } catch (e) {
             document.getElementById('status').textContent = '⚠️ 請手動刷新';
@@ -195,35 +383,43 @@ class App {
     }
 
     resetForm() {
-        document.getElementById('editId').value = "";
-        document.getElementById('amt').value = "";
-        document.getElementById('desc').value = "";
-        document.getElementById('formTitle').textContent = "🧾 記帳 / 修改";
-        document.getElementById('cancelBtn').style.display = "none";
+        document.getElementById('editId').value = '';
+        document.getElementById('amt').value = '';
+        document.getElementById('desc').value = '';
+        document.getElementById('date').value = this.getLocalDate();
+        document.getElementById('formTitle').textContent = '🧾 記帳 / 修改';
+        document.getElementById('cancelBtn').style.display = 'none';
     }
 
     edit(id) {
         const item = this.expenses.find(e => String(e.id) === String(id));
         if (!item) return;
+
         document.getElementById('editId').value = item.id;
         document.getElementById('date').value = item.date;
         document.getElementById('person').value = item.person;
         document.getElementById('cat').value = item.category;
         document.getElementById('amt').value = item.amount;
         document.getElementById('desc').value = item.description;
-        document.getElementById('formTitle').textContent = "✏️ 修改模式";
-        document.getElementById('cancelBtn').style.display = "block";
+        document.getElementById('formTitle').textContent = '✏️ 修改模式';
+        document.getElementById('cancelBtn').style.display = 'block';
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    updateRecordDisplay() {
+        this.recordDisplayCount = parseInt(document.getElementById('recordCountSelect').value);
+        localStorage.setItem('zm_record_count', this.recordDisplayCount);
+        this.render();
     }
 
     render() {
         const now = new Date();
-        const currentMonth = now.toISOString().substring(0, 7); 
+        const currentMonth = now.getFullYear().toString() + '-' + String(now.getMonth() + 1).padStart(2, '0');
 
-        // 1. 篩選本月資料
+        // 篩選本月資料
         const monthlyData = this.expenses.filter(e => e.date.startsWith(currentMonth));
-        
-        // 2. 統計總額與個人金額
+
+        // 統計總額與個人金額
         let totalSum = 0;
         let zivSum = 0;
         let minSum = 0;
@@ -240,37 +436,61 @@ class App {
         document.getElementById('sumZiv').textContent = '$' + Math.round(zivSum).toLocaleString();
         document.getElementById('sumMin').textContent = '$' + Math.round(minSum).toLocaleString();
 
-        // 3. 畫家庭本月總支出圓餅圖
+        // 更新圖表
         this.updateTotalChart(catMap);
 
-        // 4. 渲染明細
+        // 渲染記錄列表（防止 XSS）
         const list = document.getElementById('list');
-        list.innerHTML = this.expenses.slice().sort((a,b) => b.id - a.id).slice(0, 30).map(e => `
+        const sortedExpenses = this.expenses.slice().sort((a, b) => {
+            const dateA = new Date(a.date);
+            const dateB = new Date(b.date);
+            return dateB - dateA; // 按日期降序
+        }).slice(0, this.recordDisplayCount);
+
+        if (sortedExpenses.length === 0) {
+            list.innerHTML = '<p style="text-align:center; color:#999; padding:20px;">尚無紀錄</p>';
+            return;
+        }
+
+        list.innerHTML = sortedExpenses.map(e => `
             <div class="record-item">
-                <div style="flex:1;">
-                    <div style="font-weight:bold; font-size:14px;">${e.category} <small style="color:#999; font-weight:normal;">(${e.person})</small></div>
-                    <div style="font-size:11px; color:#888;">${e.date} ${e.description}</div>
+                <div class="record-info">
+                    <div class="record-category">
+                        ${escapeHtml(e.category)}
+                        <span class="record-person">(${escapeHtml(e.person)})</span>
+                    </div>
+                    <div class="record-desc">${escapeHtml(e.date)} ${escapeHtml(e.description)}</div>
                 </div>
-                <div style="text-align:right;">
+                <div style="text-align:right; display:flex; align-items:center; gap:5px;">
                     <div class="amt">$${Math.round(e.amount).toLocaleString()}</div>
-                    <button class="btn-edit" onclick="app.edit('${e.id}')">修改</button>
+                    <button class="btn-edit" onclick="app.edit('${escapeHtml(e.id)}')">修改</button>
                 </div>
             </div>
-        `).join('') || '<p style="text-align:center; color:#999; padding:20px;">尚無紀錄</p>';
+        `).join('');
     }
 
     updateTotalChart(catMap) {
         const canvas = document.getElementById('chartTotal');
         const ctx = canvas.getContext('2d');
-        if (this.chartTotal) this.chartTotal.destroy();
         
-        const entries = Object.entries(catMap).sort((a,b) => b[1] - a[1]);
+        if (this.chartTotal) {
+            this.chartTotal.destroy();
+        }
+
+        const entries = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
+        
         if (entries.length === 0) {
-            // 如果沒資料，畫一個灰色的空圓
             this.chartTotal = new Chart(ctx, {
                 type: 'pie',
-                data: { labels: ['尚無資料'], datasets: [{ data: [1], backgroundColor: ['#eee'] }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                data: {
+                    labels: ['尚無資料'],
+                    datasets: [{ data: [1], backgroundColor: ['#eee'] }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
             });
             return;
         }
@@ -279,20 +499,25 @@ class App {
             type: 'pie',
             data: {
                 labels: entries.map(e => e[0]),
-                datasets: [{ data: entries.map(e => e[1]), backgroundColor: colorPalette }]
+                datasets: [{
+                    data: entries.map(e => e[1]),
+                    backgroundColor: colorPalette
+                }]
             },
-            options: { 
-                responsive: true, maintainAspectRatio: false, 
-                plugins: { 
-                    legend: { 
-                        position: 'bottom', 
-                        labels: { boxWidth: 12, font: { size: 10 }, padding: 15 } 
-                    } 
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 12, font: { size: 10 }, padding: 15 }
+                    }
                 }
             }
         });
     }
 }
+
 const app = new App();
 </script>
 </body>
