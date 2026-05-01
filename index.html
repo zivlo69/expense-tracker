@@ -14,19 +14,29 @@
         .header { background: var(--primary); color: white; padding: 15px; border-radius: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
         .btn-sync { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; }
         .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 10px; }
+        
+        /* 家庭總支出圓餅圖高度 */
         .chart-main { height: 260px; width: 100%; position: relative; margin: 10px 0; }
-        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .chart-sub { height: 160px; position: relative; }
+        
+        /* 個人總額卡片 */
+        .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .summary-card { background: white; padding: 12px; border-radius: 12px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-top: 4px solid var(--primary); }
+        .summary-val { font-size: 18px; font-weight: 900; margin-top: 5px; }
+        .ziv-card { border-top-color: #667eea; }
+        .min-card { border-top-color: #ff4d4f; }
+        .ziv-text { color: #667eea; }
+        .min-text { color: #ff4d4f; }
+
         .form-group { margin-bottom: 10px; }
         .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; }
-        .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; outline: none; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; outline: none; background: #fff; }
         .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; }
         .btn-main:disabled { background: #ccc; }
         .btn-cancel { width: 100%; padding: 10px; background: #999; color: white; border: none; border-radius: 10px; margin-top: 8px; display: none; }
+        
         .record-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 5px; border-bottom: 1px solid #eee; }
-        .amt { font-weight: 800; font-size: 18px; color: #333; }
-        .btn-edit { color: #4466ee; background: #eef2ff; border: none; padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 600; }
-        @media (max-width: 500px) { .charts-grid { grid-template-columns: 1fr; } }
+        .amt { font-weight: 800; font-size: 16px; color: #333; }
+        .btn-edit { color: #4466ee; background: #eef2ff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; }
     </style>
 </head>
 <body id="bodyTag">
@@ -37,25 +47,24 @@
             <h1 id="titleTxt" style="font-size: 18px;">Z&M 2026</h1>
             <div id="status" style="font-size: 11px; opacity: 0.9;">本月統計模式</div>
         </div>
-        <button class="btn-sync" onclick="app.fetchCloud(true)">🔄 刷新</button>
+        <button class="btn-sync" onclick="app.fetchCloud(true)">🔄 強制刷新</button>
     </div>
 
-    <!-- 總花費：僅限本月 -->
     <div class="card" style="text-align: center;">
-        <h3 id="monthTitle" style="font-size: 15px; color: #333;">🏠 家庭本月支出</h3>
+        <h3 id="monthTitle" style="font-size: 15px; color: #333; margin-bottom: 5px;">🏠 家庭本月支出分類</h3>
         <div class="chart-main"><canvas id="chartTotal"></canvas></div>
-        <div id="grandTotal" style="font-size: 18px; font-weight: 900; color: #444;">$0</div>
+        <div style="font-size: 12px; color: #999;">本月總計</div>
+        <div id="grandTotal" style="font-size: 24px; font-weight: 900; color: #222;">$0</div>
     </div>
 
-    <!-- 個人花費：僅限本月 -->
-    <div class="charts-grid">
-        <div class="card" style="text-align: center;">
-            <h4 style="font-size: 12px;">🤴 ZIV 本月</h4>
-            <div class="chart-sub"><canvas id="chartZiv"></canvas></div>
+    <div class="summary-grid">
+        <div class="summary-card ziv-card">
+            <div style="font-size: 12px; color: #888;">🤴 ZIV 累計</div>
+            <div id="sumZiv" class="summary-val ziv-text">$0</div>
         </div>
-        <div class="card" style="text-align: center;">
-            <h4 style="font-size: 12px;">👸 MIN 本月</h4>
-            <div class="chart-sub"><canvas id="chartMin"></canvas></div>
+        <div class="summary-card min-card">
+            <div style="font-size: 12px; color: #888;">👸 MIN 累計</div>
+            <div id="sumMin" class="summary-val min-text">$0</div>
         </div>
     </div>
 
@@ -70,13 +79,13 @@
         </div>
         <div class="form-group"><label>分類</label><select id="cat"></select></div>
         <div class="form-group"><label>金額</label><input type="number" id="amt" placeholder="0" inputmode="numeric"></div>
-        <div class="form-group"><label>描述</label><input type="text" id="desc" placeholder="備註"></div>
+        <div class="form-group"><label>描述</label><input type="text" id="desc" placeholder="備註內容"></div>
         <button class="btn-main" id="addBtn">儲存記錄</button>
         <button class="btn-cancel" id="cancelBtn" onclick="app.resetForm()">取消修改</button>
     </div>
 
     <div class="card">
-        <h3 style="margin-bottom:10px; font-size:16px;">📝 歷史明細 (近 30 筆)</h3>
+        <h3 style="margin-bottom:10px; font-size:16px;">📝 最近記錄 (近30筆)</h3>
         <div id="list"></div>
     </div>
 </div>
@@ -91,7 +100,7 @@ class App {
     constructor() {
         this.expenses = [];
         this.currentUser = localStorage.getItem('zm_user') || 'ZIV';
-        this.charts = { Total: null, ZIV: null, MIN: null };
+        this.chartTotal = null;
         this.init();
     }
 
@@ -107,9 +116,8 @@ class App {
         document.getElementById('date').value = new Date().toISOString().split('T')[0];
         document.getElementById('addBtn').onclick = () => this.handleSave();
         
-        // 顯示目前月份標題
         const now = new Date();
-        document.getElementById('monthTitle').textContent = `🏠 家庭 ${now.getMonth()+1}月 支出`;
+        document.getElementById('monthTitle').textContent = `🏠 家庭 ${now.getMonth()+1}月 支出分類`;
         
         await this.fetchCloud();
     }
@@ -122,7 +130,7 @@ class App {
 
     applyUserTheme(user) {
         document.getElementById('bodyTag').className = user === 'MIN' ? 'theme-min' : '';
-        document.getElementById('titleTxt').textContent = user + ' 記帳中';
+        document.getElementById('titleTxt').textContent = user + ' 專屬記帳';
     }
 
     async fetchCloud(isManual = false) {
@@ -133,9 +141,9 @@ class App {
             const data = await res.json();
             if (Array.isArray(data)) {
                 this.expenses = data;
-                status.textContent = '更新完成: ' + new Date().toLocaleTimeString();
+                status.textContent = '最後更新: ' + new Date().toLocaleTimeString();
                 this.render();
-                if(isManual) alert('已更新本月數據！');
+                if(isManual) alert('已更新本月最新數據！');
             }
         } catch (e) { status.textContent = '❌ 連線逾時'; }
     }
@@ -146,7 +154,7 @@ class App {
         if (!amt || amt <= 0) return alert('請輸入金額');
 
         addBtn.disabled = true;
-        addBtn.textContent = "同步中...";
+        addBtn.textContent = "傳送中...";
 
         const editId = document.getElementById('editId').value;
         const newItem = {
@@ -158,7 +166,6 @@ class App {
             description: document.getElementById('desc').value || ""
         };
 
-        // 更新本地資料
         if (editId) {
             const idx = this.expenses.findIndex(e => String(e.id) === String(editId));
             if (idx !== -1) this.expenses[idx] = newItem;
@@ -166,9 +173,7 @@ class App {
             this.expenses.push(newItem);
         }
         
-        // 推送到雲端
         await this.pushToCloud();
-        
         this.resetForm();
         addBtn.disabled = false;
         addBtn.textContent = "儲存記錄";
@@ -181,13 +186,10 @@ class App {
                 body: JSON.stringify(this.expenses),
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' }
             });
-            // 不再報錯誤，只要沒進入 catch 就是成功
-            document.getElementById('status').textContent = '✅ 已存入 Google';
+            document.getElementById('status').textContent = '✅ 已存入雲端';
             this.render();
         } catch (e) {
-            console.log("Sync subtle error:", e);
-            // 由於 Google Script 有時會 CORS 報錯但實際成功，這裡做靜默處理或微提示
-            document.getElementById('status').textContent = '⚠️ 同步狀態不穩(請刷新)';
+            document.getElementById('status').textContent = '⚠️ 請手動刷新';
             this.render();
         }
     }
@@ -209,65 +211,71 @@ class App {
         document.getElementById('cat').value = item.category;
         document.getElementById('amt').value = item.amount;
         document.getElementById('desc').value = item.description;
-        document.getElementById('formTitle').textContent = "✏️ 正在修改";
+        document.getElementById('formTitle').textContent = "✏️ 修改模式";
         document.getElementById('cancelBtn').style.display = "block";
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     render() {
         const now = new Date();
-        const currentMonth = now.toISOString().substring(0, 7); // "2026-05"
+        const currentMonth = now.toISOString().substring(0, 7); 
 
-        // 篩選本月資料作圖
+        // 1. 篩選本月資料
         const monthlyData = this.expenses.filter(e => e.date.startsWith(currentMonth));
         
-        // 渲染清單（顯示最近 30 筆，不分月份）
+        // 2. 統計總額與個人金額
+        let totalSum = 0;
+        let zivSum = 0;
+        let minSum = 0;
+        const catMap = {};
+
+        monthlyData.forEach(e => {
+            totalSum += e.amount;
+            if (e.person === 'ZIV') zivSum += e.amount;
+            if (e.person === 'MIN') minSum += e.amount;
+            catMap[e.category] = (catMap[e.category] || 0) + e.amount;
+        });
+
+        document.getElementById('grandTotal').textContent = '$' + Math.round(totalSum).toLocaleString();
+        document.getElementById('sumZiv').textContent = '$' + Math.round(zivSum).toLocaleString();
+        document.getElementById('sumMin').textContent = '$' + Math.round(minSum).toLocaleString();
+
+        // 3. 畫家庭本月總支出圓餅圖
+        this.updateTotalChart(catMap);
+
+        // 4. 渲染明細
         const list = document.getElementById('list');
         list.innerHTML = this.expenses.slice().sort((a,b) => b.id - a.id).slice(0, 30).map(e => `
             <div class="record-item">
                 <div style="flex:1;">
-                    <div style="font-weight:bold;">${e.category} <small>(${e.person})</small></div>
+                    <div style="font-weight:bold; font-size:14px;">${e.category} <small style="color:#999; font-weight:normal;">(${e.person})</small></div>
                     <div style="font-size:11px; color:#888;">${e.date} ${e.description}</div>
                 </div>
                 <div style="text-align:right;">
-                    <div class="amt">$${Math.round(e.amount)}</div>
-                    <button class="btn-edit" onclick="app.edit('${e.id}')">改</button>
+                    <div class="amt">$${Math.round(e.amount).toLocaleString()}</div>
+                    <button class="btn-edit" onclick="app.edit('${e.id}')">修改</button>
                 </div>
             </div>
-        `).join('') || '無紀錄';
-
-        this.updateCharts(monthlyData);
+        `).join('') || '<p style="text-align:center; color:#999; padding:20px;">尚無紀錄</p>';
     }
 
-    updateCharts(monthlyData) {
-        // 總支出
-        const totalMap = {};
-        let grandTotal = 0;
-        monthlyData.forEach(e => {
-            totalMap[e.category] = (totalMap[e.category] || 0) + e.amount;
-            grandTotal += e.amount;
-        });
-        document.getElementById('grandTotal').textContent = '本月總計: $' + Math.round(grandTotal).toLocaleString();
-        this.drawPie('Total', totalMap, true);
-
-        // 個人支出
-        ['ZIV', 'MIN'].forEach(user => {
-            const userMap = {};
-            monthlyData.filter(e => e.person === user).forEach(e => {
-                userMap[e.category] = (userMap[e.category] || 0) + e.amount;
-            });
-            this.drawPie(user, userMap, false);
-        });
-    }
-
-    drawPie(type, dataMap, showLegend) {
-        const ctx = document.getElementById('chart' + type).getContext('2d');
-        if (this.charts[type]) this.charts[type].destroy();
+    updateTotalChart(catMap) {
+        const canvas = document.getElementById('chartTotal');
+        const ctx = canvas.getContext('2d');
+        if (this.chartTotal) this.chartTotal.destroy();
         
-        const entries = Object.entries(dataMap).sort((a,b) => b[1] - a[1]);
-        if (entries.length === 0) return; // 沒資料就不畫，避免空白圖
+        const entries = Object.entries(catMap).sort((a,b) => b[1] - a[1]);
+        if (entries.length === 0) {
+            // 如果沒資料，畫一個灰色的空圓
+            this.chartTotal = new Chart(ctx, {
+                type: 'pie',
+                data: { labels: ['尚無資料'], datasets: [{ data: [1], backgroundColor: ['#eee'] }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+            return;
+        }
 
-        this.charts[type] = new Chart(ctx, {
+        this.chartTotal = new Chart(ctx, {
             type: 'pie',
             data: {
                 labels: entries.map(e => e[0]),
@@ -275,7 +283,12 @@ class App {
             },
             options: { 
                 responsive: true, maintainAspectRatio: false, 
-                plugins: { legend: { display: showLegend, position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } } }
+                plugins: { 
+                    legend: { 
+                        position: 'bottom', 
+                        labels: { boxWidth: 12, font: { size: 10 }, padding: 15 } 
+                    } 
+                }
             }
         });
     }
