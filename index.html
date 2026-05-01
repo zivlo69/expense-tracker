@@ -218,6 +218,7 @@ class App {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
         document.getElementById('person').value = this.currentUser;
+        document.getElementById('date').value = this.getLocalDate();  // ← 新增的這一行
         this.applyUserTheme(this.currentUser);
     }
 
