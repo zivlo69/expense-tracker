@@ -35,8 +35,6 @@
         .btn-edit { color: #4466ee; background: #eef2ff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
         #loginScreen { position: fixed; inset: 0; background: var(--bg-grad); display: flex; align-items: center; justify-content: center; z-index: 999; }
         .login-box { background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 320px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); text-align: center; }
-        .login-error { color: #ff4d4f; font-size: 12px; margin-top: 10px; display: none; }
-        .record-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
     </style>
 </head>
 <body id="bodyTag">
@@ -46,9 +44,8 @@
         <div style="font-size: 50px;">🔐</div>
         <h2>Z&M 家計簿</h2>
         <p style="font-size:12px; color:#999; margin-bottom:20px;">輸入密碼以繼續</p>
-        <input type="password" id="pwInput" placeholder="請輸入密碼" style="width:100%; padding:12px; border-radius:10px; border:1px solid #ddd; margin-bottom:15px;" onkeypress="if(event.key==='Enter') app.login();">
+        <input type="password" id="pwInput" placeholder="請輸入密碼" style="width:100%; padding:12px; border-radius:10px; border:1px solid #ddd; margin-bottom:15px;">
         <button class="btn-main" onclick="app.login()" id="loginBtn">登入</button>
-        <div class="login-error" id="loginError"></div>
     </div>
 </div>
 
@@ -56,10 +53,10 @@
     <div class="header">
         <div class="header-left">
             <h1 id="titleTxt" style="font-size: 18px;">Z&M 專屬記帳</h1>
-            <div id="status" style="font-size: 11px; opacity: 0.9;">本月統計模式</div>
+            <div id="status" style="font-size: 11px; opacity: 0.9;">載入中...</div>
         </div>
         <div class="header-right">
-            <button class="btn-sync" onclick="app.fetchCloud(true)">🔄 刷新</button>
+            <button class="btn-sync" onclick="app.fetchCloud()">🔄 刷新</button>
             <button class="btn-logout" onclick="app.logout()">🚪 登出</button>
         </div>
     </div>
@@ -85,27 +82,24 @@
         <div class="form-group"><label>分類</label><select id="cat"></select></div>
         <div class="form-group"><label>金額</label><input type="number" id="amt" placeholder="0" inputmode="numeric"></div>
         <div class="form-group"><label>描述</label><input type="text" id="desc" placeholder="備註內容"></div>
-        <button class="btn-main" id="addBtn">儲存記錄</button>
+        <button class="btn-main" id="addBtn" onclick="app.handleSave()">儲存記錄</button>
         <button class="btn-cancel" id="cancelBtn" onclick="app.resetForm()">取消修改</button>
     </div>
 
     <div class="card">
         <h3 style="margin-bottom:10px; font-size:16px;">📝 最近記錄</h3>
-        <div class="record-controls">
-            <select id="recordCountSelect" onchange="app.updateRecordDisplay()" style="padding:5px; border-radius:5px;">
-                <option value="20">20筆</option><option value="40" selected>40筆</option><option value="60">60筆</option>
-            </select>
-        </div>
+        <select id="recordCountSelect" onchange="app.updateRecordDisplay()" style="padding:5px; border-radius:5px; margin-bottom:10px;">
+            <option value="20">20筆</option><option value="40" selected>40筆</option><option value="60">60筆</option>
+        </select>
         <div id="list"></div>
     </div>
 </div>
 
 <script>
-const MASTER_URL = "https://script.google.com/macros/s/AKfycbyyr-CM-850Ykt0sTaCaSF-5lYPULMr1PiljNyyspQvg1cLbI1_ChvwUGEFYTJPkCs9/exec"; 
 const categories = ['早餐', '中餐', '晚餐', '宵夜', '點心', '飲料', '油錢', '停車', '交通車票計程車', '食材費用', '零食餅乾', '奧斯卡', '治裝', '教育', '娛樂', '家用修繕', '住家雜費', '房貸', '水費', '電費', '瓦斯費', '大樓管理費', '住宿費', '醫療', '保險費', '家用網路', '手機費', 'ETC', '車輛保養維修', '稅金TAX', '其他'];
 const colorPalette = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8bc34a', '#f44336', '#2196f3', '#ffeb3b', '#9c27b0', '#00bcd4', '#e91e63', '#673ab7', '#3f51b5', '#03a9f4', '#009688', '#4caf50', '#cddc39', '#ffc107', '#ff9800', '#ff5722', '#795548', '#9e9e9e', '#607d8b', '#333333', '#1a237e', '#b71c1c', '#1b5e20', '#d4e157'];
 
-    class App {
+class App {
     constructor() {
         this.expenses = [];
         this.currentUser = localStorage.getItem('zm_user') || 'ZIV';
@@ -121,58 +115,48 @@ const colorPalette = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#F
             const opt = document.createElement('option');
             opt.value = c; opt.textContent = c; catSelect.appendChild(opt);
         });
-        document.getElementById('addBtn').onclick = () => this.handleSave();
         if (this.token) { this.showMainApp(); this.fetchCloud(); }
     }
 
-    showLoginScreen() { document.getElementById('loginScreen').style.display='flex'; document.getElementById('mainApp').style.display='none'; }
+    logout() { localStorage.removeItem('zm_token'); location.reload(); }
+
     showMainApp() { 
         document.getElementById('loginScreen').style.display='none'; 
         document.getElementById('mainApp').style.display='block';
-        // 使用瑞典語系格式強制產出 yyyy-mm-dd
         document.getElementById('date').value = new Date().toLocaleDateString('sv-SE');
         this.applyUserTheme(this.currentUser);
+        document.getElementById('person').value = this.currentUser;
     }
 
-
-    async login() {
+    login() {
         const password = document.getElementById('pwInput').value;
         const btn = document.getElementById('loginBtn');
         btn.disabled = true;
-        
-        // 改用 GAS 原生呼叫進行驗證
         google.script.run.withSuccessHandler((res) => {
             btn.disabled = false;
             if (res !== "INVALID_TOKEN") {
-                this.token = password; // 直接將正確密碼存為 token
+                this.token = password;
                 localStorage.setItem('zm_token', this.token);
+                this.expenses = res;
                 this.showMainApp();
-                this.expenses = res; // 登入成功順便帶入資料
                 this.render();
-            } else {
-                alert('密碼錯誤');
-            }
+            } else { alert('密碼錯誤'); }
         }).getData(password); 
     }
 
-    async fetchCloud(isManual = false) {
+    fetchCloud() {
         document.getElementById('status').textContent = '☁️ 同步中...';
-        // 使用 GAS 方式抓取
         google.script.run.withSuccessHandler((data) => {
-            if (data === "INVALID_TOKEN") {
-                this.logout();
-                return;
-            }
+            if (data === "INVALID_TOKEN") { this.logout(); return; }
             this.expenses = data;
             document.getElementById('status').textContent = '最後更新: ' + new Date().toLocaleTimeString();
             this.render();
         }).getData(this.token);
     }
 
-    async handleSave() {
+    handleSave() {
         const amt = parseFloat(document.getElementById('amt').value);
         if (!amt) return alert('請輸入金額');
-        
         const newItem = {
             date: document.getElementById('date').value,
             person: document.getElementById('person').value,
@@ -180,39 +164,49 @@ const colorPalette = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#F
             amount: amt,
             description: document.getElementById('desc').value || ''
         };
-        
         const editId = document.getElementById('editId').value || Date.now().toString();
-        
-        document.getElementById('addBtn').disabled = true;
-        document.getElementById('addBtn').textContent = "儲存中...";
-
-        // 呼叫 GAS 的 updateData 函式
+        const btn = document.getElementById('addBtn');
+        btn.disabled = true;
+        btn.textContent = "儲存中...";
         google.script.run.withSuccessHandler((res) => {
-            document.getElementById('addBtn').disabled = false;
-            document.getElementById('addBtn').textContent = "儲存記錄";
-            if (res === "SUCCESS" || res === "成功更新") {
-                this.fetchCloud(); // 重新抓取最新資料
-                this.resetForm();
-            } else {
-                alert('儲存失敗：' + res);
-            }
+            btn.disabled = false;
+            btn.textContent = "儲存記錄";
+            if (res === "SUCCESS") { this.fetchCloud(); this.resetForm(); } 
+            else { alert('儲存失敗：' + res); }
         }).updateData(this.token, editId, newItem);
     }
 
-    // render() 函式中，請確認這一段的順序
-    // ...
-    list.innerHTML = this.expenses.slice().sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, this.recordDisplayCount).map(e => `
-        <div class="record-item">
-            <div style="flex:1;">
-                <div style="font-weight:bold;">${e.category} <small style="color:#999">(${e.person})</small></div>
-                <div style="font-size:11px; color:#888;">${e.date} | ${e.description || '無備註'}</div>
+    render() {
+        const list = document.getElementById('list');
+        let total = 0, zTotal = 0, mTotal = 0;
+        const catMap = {};
+
+        this.expenses.forEach(e => {
+            const val = parseFloat(e.amount) || 0;
+            total += val;
+            if (e.person === 'ZIV') zTotal += val;
+            if (e.person === 'MIN') mTotal += val;
+            catMap[e.category] = (catMap[e.category] || 0) + val;
+        });
+
+        document.getElementById('grandTotal').textContent = '$' + Math.round(total).toLocaleString();
+        document.getElementById('sumZiv').textContent = '$' + Math.round(zTotal).toLocaleString();
+        document.getElementById('sumMin').textContent = '$' + Math.round(mTotal).toLocaleString();
+
+        list.innerHTML = this.expenses.slice(0, this.recordDisplayCount).map(e => `
+            <div class="record-item">
+                <div style="flex:1;">
+                    <div style="font-weight:bold;">${e.category} <small style="color:#999">(${e.person})</small></div>
+                    <div style="font-size:11px; color:#888;">${e.date} | ${e.description || '無備註'}</div>
+                </div>
+                <div style="display:flex; align-items:center;">
+                    <div class="amt">$${Math.round(e.amount)}</div>
+                    <button class="btn-edit" onclick="app.edit('${e.id}')">修改</button>
+                </div>
             </div>
-            <div style="display:flex; align-items:center;">
-                <div class="amt">$${Math.round(e.amount)}</div>
-                <button class="btn-edit" onclick="app.edit('${e.id}')">修改</button>
-            </div>
-        </div>
-    `).join('');
+        `).join('');
+        this.updateChart(catMap);
+    }
 
     updateChart(catMap) {
         const ctx = document.getElementById('chartTotal').getContext('2d');
@@ -224,7 +218,7 @@ const colorPalette = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#F
                 labels: entries.map(e => e[0]),
                 datasets: [{ data: entries.map(e => e[1]), backgroundColor: colorPalette }]
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
         });
     }
 
