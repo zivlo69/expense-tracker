@@ -134,103 +134,85 @@ const colorPalette = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#F
         this.applyUserTheme(this.currentUser);
     }
 
+
     async login() {
         const password = document.getElementById('pwInput').value;
         const btn = document.getElementById('loginBtn');
         btn.disabled = true;
-        try {
-            const res = await fetch(MASTER_URL, { method: 'POST', body: JSON.stringify({ action: 'login', password }) });
-            const data = await res.json();
-            if (data.token) {
-                this.token = data.token; localStorage.setItem('zm_token', this.token);
-                this.showMainApp(); this.fetchCloud();
-            } else { alert('密碼錯誤'); }
-        } catch (e) { alert('連線失敗'); }
-        btn.disabled = false;
+        
+        // 改用 GAS 原生呼叫進行驗證
+        google.script.run.withSuccessHandler((res) => {
+            btn.disabled = false;
+            if (res !== "INVALID_TOKEN") {
+                this.token = password; // 直接將正確密碼存為 token
+                localStorage.setItem('zm_token', this.token);
+                this.showMainApp();
+                this.expenses = res; // 登入成功順便帶入資料
+                this.render();
+            } else {
+                alert('密碼錯誤');
+            }
+        }).getData(password); 
     }
-
-    logout() { localStorage.removeItem('zm_token'); location.reload(); }
 
     async fetchCloud(isManual = false) {
         document.getElementById('status').textContent = '☁️ 同步中...';
-        try {
-            const res = await fetch(MASTER_URL + '?token=' + this.token);
-            const data = await res.json();
-            if (Array.isArray(data)) {
-                this.expenses = data;
-                document.getElementById('status').textContent = '最後更新: ' + new Date().toLocaleTimeString();
-                this.render();
+        // 使用 GAS 方式抓取
+        google.script.run.withSuccessHandler((data) => {
+            if (data === "INVALID_TOKEN") {
+                this.logout();
+                return;
             }
-        } catch (e) { document.getElementById('status').textContent = '❌ 連線逾時'; }
+            this.expenses = data;
+            document.getElementById('status').textContent = '最後更新: ' + new Date().toLocaleTimeString();
+            this.render();
+        }).getData(this.token);
     }
 
     async handleSave() {
         const amt = parseFloat(document.getElementById('amt').value);
         if (!amt) return alert('請輸入金額');
+        
         const newItem = {
-            id: document.getElementById('editId').value || Date.now().toString(),
             date: document.getElementById('date').value,
             person: document.getElementById('person').value,
             category: document.getElementById('cat').value,
             amount: amt,
             description: document.getElementById('desc').value || ''
         };
-        const editId = document.getElementById('editId').value;
-        if (editId) {
-            const idx = this.expenses.findIndex(e => String(e.id) === String(editId));
-            this.expenses[idx] = newItem;
-        } else { this.expenses.push(newItem); }
         
-        await this.pushToCloud();
-        this.resetForm();
+        const editId = document.getElementById('editId').value || Date.now().toString();
+        
+        document.getElementById('addBtn').disabled = true;
+        document.getElementById('addBtn').textContent = "儲存中...";
+
+        // 呼叫 GAS 的 updateData 函式
+        google.script.run.withSuccessHandler((res) => {
+            document.getElementById('addBtn').disabled = false;
+            document.getElementById('addBtn').textContent = "儲存記錄";
+            if (res === "SUCCESS" || res === "成功更新") {
+                this.fetchCloud(); // 重新抓取最新資料
+                this.resetForm();
+            } else {
+                alert('儲存失敗：' + res);
+            }
+        }).updateData(this.token, editId, newItem);
     }
 
-    async pushToCloud() {
-        try {
-            await fetch(MASTER_URL, { method: 'POST', body: JSON.stringify({ token: this.token, expenses: this.expenses }) });
-            this.render();
-        } catch (e) { alert('儲存失敗'); }
-    }
-
-    render() {
-        const now = new Date();
-        const curY = now.getFullYear();
-        const curM = now.getMonth();
-        
-        // 【核心修正】：將字串轉為日期物件，比對年、月數值，不受語系字串影響
-        const monthlyData = this.expenses.filter(e => {
-            const d = new Date(e.date);
-            return d.getFullYear() === curY && d.getMonth() === curM;
-        });
-
-        let total = 0, ziv = 0, min = 0;
-        const catMap = {};
-        monthlyData.forEach(e => {
-            total += e.amount;
-            if (e.person === 'ZIV') ziv += e.amount;
-            if (e.person === 'MIN') min += e.amount;
-            catMap[e.category] = (catMap[e.category] || 0) + e.amount;
-        });
-
-        document.getElementById('grandTotal').textContent = '$' + Math.round(total).toLocaleString();
-        document.getElementById('sumZiv').textContent = '$' + Math.round(ziv).toLocaleString();
-        document.getElementById('sumMin').textContent = '$' + Math.round(min).toLocaleString();
-        this.updateChart(catMap);
-
-        const list = document.getElementById('list');
-        list.innerHTML = this.expenses.slice().sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, this.recordDisplayCount).map(e => `
-            <div class="record-item">
-                <div style="flex:1;">
-                    <div style="font-weight:bold;">${e.category} <small style="color:#999">(${e.person})</small></div>
-                    <div style="font-size:11px; color:#888;">${e.date} ${e.description}</div>
-                </div>
-                <div style="display:flex; align-items:center;">
-                    <div class="amt">$${Math.round(e.amount)}</div>
-                    <button class="btn-edit" onclick="app.edit('${e.id}')">修改</button>
-                </div>
+    // render() 函式中，請確認這一段的順序
+    // ...
+    list.innerHTML = this.expenses.slice().sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, this.recordDisplayCount).map(e => `
+        <div class="record-item">
+            <div style="flex:1;">
+                <div style="font-weight:bold;">${e.category} <small style="color:#999">(${e.person})</small></div>
+                <div style="font-size:11px; color:#888;">${e.date} | ${e.description || '無備註'}</div>
             </div>
-        `).join('');
-    }
+            <div style="display:flex; align-items:center;">
+                <div class="amt">$${Math.round(e.amount)}</div>
+                <button class="btn-edit" onclick="app.edit('${e.id}')">修改</button>
+            </div>
+        </div>
+    `).join('');
 
     updateChart(catMap) {
         const ctx = document.getElementById('chartTotal').getContext('2d');
