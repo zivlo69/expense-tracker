@@ -44,7 +44,7 @@
         <div style="font-size: 50px;">🔐</div>
         <h2>Z&M 家計簿</h2>
         <p style="font-size:12px; color:#999; margin-bottom:20px;">輸入密碼以繼續</p>
-        <input type="password" id="pwInput" placeholder="請輸入密碼" style="width:100%; padding:12px; border-radius:10px; border:1px solid #ddd; margin-bottom:15px;">
+        <input type="password" id="pwInput" placeholder="請輸入密碼" style="width:100%; padding:12px; border-radius:10px; border:1px solid #ddd; margin-bottom:15px;" onkeypress="if(event.key==='Enter') app.login();">
         <button class="btn-main" onclick="app.login()" id="loginBtn">登入</button>
     </div>
 </div>
@@ -96,6 +96,8 @@
 </div>
 
 <script>
+// --- 設定區域 ---
+const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyyr-CM-850Ykt0sTaCaSF-5lYPULMr1PiljNyyspQvg1cLbI1_ChvwUGEFYTJPkCs9/exec"; 
 const categories = ['早餐', '中餐', '晚餐', '宵夜', '點心', '飲料', '油錢', '停車', '交通車票計程車', '食材費用', '零食餅乾', '奧斯卡', '治裝', '教育', '娛樂', '家用修繕', '住家雜費', '房貸', '水費', '電費', '瓦斯費', '大樓管理費', '住宿費', '醫療', '保險費', '家用網路', '手機費', 'ETC', '車輛保養維修', '稅金TAX', '其他'];
 const colorPalette = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8bc34a', '#f44336', '#2196f3', '#ffeb3b', '#9c27b0', '#00bcd4', '#e91e63', '#673ab7', '#3f51b5', '#03a9f4', '#009688', '#4caf50', '#cddc39', '#ffc107', '#ff9800', '#ff5722', '#795548', '#9e9e9e', '#607d8b', '#333333', '#1a237e', '#b71c1c', '#1b5e20', '#d4e157'];
 
@@ -128,52 +130,77 @@ class App {
         document.getElementById('person').value = this.currentUser;
     }
 
-    login() {
+    // 針對 GitHub 修正的登入/讀取邏輯
+    async login() {
         const password = document.getElementById('pwInput').value;
         const btn = document.getElementById('loginBtn');
         btn.disabled = true;
-        google.script.run.withSuccessHandler((res) => {
-            btn.disabled = false;
-            if (res !== "INVALID_TOKEN") {
+        btn.textContent = "驗證中...";
+
+        try {
+            const res = await fetch(`${GAS_WEB_APP_URL}?token=${password}&action=get`);
+            const data = await res.json();
+            
+            if (data.result !== "ERROR") {
                 this.token = password;
                 localStorage.setItem('zm_token', this.token);
-                this.expenses = res;
+                this.expenses = data.data;
                 this.showMainApp();
                 this.render();
-            } else { alert('密碼錯誤'); }
-        }).getData(password); 
+            } else { alert("密碼錯誤"); }
+        } catch (e) {
+            alert("連線失敗，請檢查網址或 GAS 權限設定");
+        }
+        btn.disabled = false;
+        btn.textContent = "登入";
     }
 
-    fetchCloud() {
+    async fetchCloud() {
         document.getElementById('status').textContent = '☁️ 同步中...';
-        google.script.run.withSuccessHandler((data) => {
-            if (data === "INVALID_TOKEN") { this.logout(); return; }
-            this.expenses = data;
-            document.getElementById('status').textContent = '最後更新: ' + new Date().toLocaleTimeString();
-            this.render();
-        }).getData(this.token);
+        try {
+            const res = await fetch(`${GAS_WEB_APP_URL}?token=${this.token}&action=get`);
+            const data = await res.json();
+            if (data.result !== "ERROR") {
+                this.expenses = data.data;
+                document.getElementById('status').textContent = '最後更新: ' + new Date().toLocaleTimeString();
+                this.render();
+            }
+        } catch (e) { console.error("同步失敗", e); }
     }
 
-    handleSave() {
+    async handleSave() {
         const amt = parseFloat(document.getElementById('amt').value);
         if (!amt) return alert('請輸入金額');
-        const newItem = {
-            date: document.getElementById('date').value,
-            person: document.getElementById('person').value,
-            category: document.getElementById('cat').value,
-            amount: amt,
-            description: document.getElementById('desc').value || ''
-        };
-        const editId = document.getElementById('editId').value || Date.now().toString();
         const btn = document.getElementById('addBtn');
         btn.disabled = true;
         btn.textContent = "儲存中...";
-        google.script.run.withSuccessHandler((res) => {
-            btn.disabled = false;
-            btn.textContent = "儲存記錄";
-            if (res === "SUCCESS") { this.fetchCloud(); this.resetForm(); } 
-            else { alert('儲存失敗：' + res); }
-        }).updateData(this.token, editId, newItem);
+        
+        const payload = {
+            action: "update",
+            token: this.token,
+            id: document.getElementById('editId').value || Date.now().toString(),
+            data: {
+                date: document.getElementById('date').value,
+                person: document.getElementById('person').value,
+                category: document.getElementById('cat').value,
+                amount: amt,
+                description: document.getElementById('desc').value || ''
+            }
+        };
+
+        try {
+            await fetch(GAS_WEB_APP_URL, {
+                method: "POST",
+                mode: "no-cors",
+                body: JSON.stringify(payload)
+            });
+            setTimeout(() => {
+                this.fetchCloud();
+                this.resetForm();
+                btn.disabled = false;
+                btn.textContent = "儲存記錄";
+            }, 1500);
+        } catch (e) { alert("儲存失敗"); btn.disabled = false; }
     }
 
     render() {
